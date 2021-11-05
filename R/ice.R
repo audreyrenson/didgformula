@@ -39,6 +39,18 @@ estimate_ice <- function(ice_diffs, data) {
   return ( colMeans(ice_diffs) )
 }
 
+#' Iterated conditional DID g-formula estimator
+#'
+#' @param data Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.
+#' @param inside_formula chr, right-hand-side formula for inside models
+#' @param outside_formula chr, right-hand-side formula for outside models
+#' @param Tt int. max periods
+#' @param tibble logical. return results as a tibble (TRUE) or vector (FALSE)?
+#'
+#' @return
+#' @export
+#'
+#' @examples
 ice_pipeline <- function(data, inside_formula, outside_formula, Tt, tibble=TRUE) {
 
   ice_diffs <- sapply(1:Tt,
