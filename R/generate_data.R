@@ -1,3 +1,14 @@
+#' Generate simulated data that meets the parallel trends assumption
+#'
+#' @param N int. Number of independent observations
+#' @param Tt int. Number of periods, minus 1. I.e. there are Tt + 1 periods.
+#' @param Beta list of length 4. Output of generate_parameters().
+#' @param potential_outcomes logical. Should outcomes and covariates be generated with exposure set to 0 at all times?
+#'
+#' @return Data frame with N rows and (Tt+1)*3 + 2 columns - 'uid' is a unique identifier, 'U0' is an 'unmeasured' baseline covariate, L{t},A{t},Y{t} are covariates, exposures, and outcomes, respectively.
+#' @export
+#'
+#' @examples
 generate_data <- function(N, Tt, Beta, potential_outcomes=FALSE){
 
   df = data.frame(uid       = seq_len(N),
@@ -27,5 +38,7 @@ generate_data <- function(N, Tt, Beta, potential_outcomes=FALSE){
   return( df[, -which( names(df) %in% c('intercept','zeros', 'U0timesLt') ) ] )
 }
 
+# generate data from a binomial distribution based on a linear-logistic model
 rbinom_logit <- function(X, Beta, N, n=1) rbinom(n=N, p=plogis(as.matrix(X) %*% Beta), size=n)
+# generate data from a normal distribution based on a linear-identity model
 rnorm_identity <- function(X, Beta, N, sd=1) rnorm(n=N, mean = as.matrix(X) %*% Beta, sd)
