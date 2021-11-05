@@ -46,7 +46,22 @@ estimate_or <- function(simulated_data, Tt) {
   return (colMeans (simulated_data[, ydiff_names]) )
 }
 
+#' Outcome regression DID g-formula estimator
+#'
+#' @param data Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.
+#' @param y_formula chr. right-hand-side formula for outcome models
+#' @param l_formula chr. right hand side formula for covariate models
+#' @param Tt int. Max periods
+#' @param nreps int. Number of reps for monte-carlo simulation
+#' @param tibble logical. Return results as tibble (TRUE) or vector (FALSE)?
+#'
+#' @return
+#' @export
+#'
+#' @examples
 or_pipeline <- function(data, y_formula, l_formula, Tt, nreps, tibble=TRUE) {
+
+
   rep_data = get_replicate_data(data, nreps)
   cov_models = fit_covariate_models(data, rhs_formula = l_formula, Tt=Tt)
   out_models = fit_outcome_models(data, rhs_formula = y_formula, Tt=Tt)
