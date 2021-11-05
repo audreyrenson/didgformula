@@ -9,7 +9,7 @@ fit_treatment_models(data, rhs_formula, Tt)
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.}
 
-\item{rhs_formula}{chr. Formulas to use Format '~L{t}+L{t-1}' etc.}
+\item{rhs_formula}{chr. Formulas to use Format: '~L\{t\}+L\{t-1\}' etc.}
 
 \item{Tt}{int. Final period in dataset (t=0,1,...,Tt)}
 }

@@ -1,4 +1,22 @@
 
+#' Pick parameter values for simulation, from a normal distribution
+#'
+#' @param Tt Final period (t=0,1,...,Tt)
+#' @param mu_Beta_L numeric. mean for parameters in covariate models
+#' @param mu_Beta_A numeric. mean for parameters in treatment models
+#' @param mu_Beta_Y numeric. mean for parameters in outcome models
+#' @param sd_Beta_L numeric. standard deviation for parameters in covariate models
+#' @param sd_Beta_A numeric. standard deviation for parameters in treatment models
+#' @param sd_Beta_Y numeric. standard deviation for parameters in outcome models
+#' @param range_ymeans
+#' @param constant_dydu
+#' @param ylink
+#'
+#' @return
+#' @export
+#'
+#'
+#' @examples
 generate_parameters <- function(Tt, mu_Beta_L=0.2, mu_Beta_A=0.2,
                                 mu_Beta_Y=0.2, sd_Beta_L=0.2, sd_Beta_A=0.2,
                                 sd_Beta_Y=0.2, range_ymeans = c(-5, 5),

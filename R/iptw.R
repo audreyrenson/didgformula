@@ -1,7 +1,7 @@
 #' Fit treatment models for IPTW
 #'
 #' @param data Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.
-#' @param rhs_formula chr. Formulas to use Format '~L{t}+L{t-1}' etc.
+#' @param rhs_formula chr. Formulas to use Format: '~L\{t\}+L\{t-1\}' etc.
 #' @param Tt int. Final period in dataset (t=0,1,...,Tt)
 #'
 #' @return list of models for period t=0,1,...,Tt, in that order.
@@ -33,6 +33,15 @@ calc_weights <- function(denominator, numerator = 1) {
 
 }
 
+#' Calculate Y_t - Y_t-1
+#'
+#' @param data Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.
+#' @param Tt int. Final period in dataset (t=0,1,...,Tt)
+#'
+#' @return matrix with nrow(data) rows and Tt columns, each with values of Y_t - Y_t-1 for t=1,2,...,Tt.
+#' @export
+#'
+#' @examples
 calc_ydiffs <- function(data, Tt) {
   #returns an NxTt matrix
   sapply(1:Tt, function(t) data[[glue::glue('Y{t}')]] - data[[glue::glue('Y{t-1}')]], simplify = TRUE)
@@ -48,6 +57,17 @@ estimate_iptw <- function(ydiffs, weights,inclusion_indicators) {
   return (colMeans(inclusion_indicators * ydiffs * weights))
 }
 
+#' Estimate the DID g-formula using inverse-probability-of-treatment-weights.
+#'
+#' @param data Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.
+#' @param rhs_formula chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.
+#' @param Tt int. Final period in dataset (t=0,1,...,Tt)
+#' @param tibble logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?
+#'
+#' @return Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).
+#' @export
+#'
+#' @examples
 iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE) {
   den_mods = fit_treatment_models(data, rhs_formula, Tt)
   den_preds = pred_treatment_models(data, den_mods)
