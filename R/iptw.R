@@ -1,3 +1,13 @@
+#' Fit treatment models for IPTW
+#'
+#' @param data Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.
+#' @param rhs_formula chr. Formulas to use Format '~L{t}+L{t-1}' etc.
+#' @param Tt int. Final period in dataset (t=0,1,...,Tt)
+#'
+#' @return list of models for period t=0,1,...,Tt, in that order.
+#' @export
+#'
+#' @examples
 fit_treatment_models <- function(data, rhs_formula, Tt) {
   #returns a list of models
 

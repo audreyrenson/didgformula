@@ -1,15 +1,18 @@
 Package: didgformula
-Title: What the Package Does (One Line, Title Case)
+Title: The difference-in-differences g-formula
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Audrey",
+           family = "Renson",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+           email = "audrey.o.renson@gmail.com",
+           comment = c(ORCID = "0000-0003-1603-2587"))
+Description: This package implements the estimators described in the paper titled
+            'The difference-in-differences g-formula', along with a small simulation 
+            (also described in that paper) to illustrate the large-sample properties
+            of the estimators. Currently, only nonparametric models for binary exposures,
+            binary covariates, and continuous outcomes are implemented. 
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -17,9 +20,12 @@ RoxygenNote: 7.1.1
 URL: https://github.com/audreyrenson/didgformula
 BugReports: https://github.com/audreyrenson/didgformula/issues
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 
     matrixStats,
     glue,
     tibble
+VignetteBuilder: knitr

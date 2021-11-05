@@ -1,0 +1,19 @@
+---
+title: "Simulation study for DID G-formula paper"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{basic-simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(didgformula)
+```
