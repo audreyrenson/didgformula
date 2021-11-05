@@ -16,4 +16,100 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(didgformula)
+library(tidyverse)
+library(furrr)
+plan(multisession, workers = parallel::detectCores())
+set.seed(6669)
+```
+
+
+First we pick parameter values to be used in all simulations.
+
+```{r generate_parameters}
+Tt=5
+Beta = generate_parameters(Tt=Tt, mu_Beta_Y = 2) 
+Beta
+```
+
+Then generate 1000 datasets of size N=10,000 each, under parallel trends.
+
+```{r generate_data}
+N_obs=1e4
+N_po = N_obs*100
+nsims = 10
+results_template = tibble(sim = 1:nsims,
+                          data= replicate(nsims, 
+                                          generate_data(N = N_obs, Tt = Tt, Beta = Beta),
+                                          simplify = FALSE))
+```
+
+The datasets look like this:
+
+```{r look_at_data}
+head(results_template$data[[1]])
+```
+
+
+Estimate the true values of $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$ by generating potential outcomes under $\bar A=\bar a=\bar 0$.
+
+```{r generate_truth}
+data_po  = generate_data(N                  = N_po, 
+                         Tt                 = Tt,
+                         Beta               = Beta, 
+                         potential_outcomes = TRUE)
+
+
+estimates_truth <- tibble(t=1:Tt, estimate = colMeans(  calc_ydiffs(data_po, Tt) ))
+estimates_truth
+```
+
+
+
+
+# IPTW - one run ----------------------------------------------------------
+
+
+# IPTW --------------------------------------------------------------------
+
+results_iptw <- results_template %>%
+  mutate(estimates = future_map(data, iptw_pipeline, rhs_formula = '~L{t}', Tt=Tt))
+  
+
+results_iptw <- results_iptw %>% select(-data)
+
+save(results_iptw, file = 'results_ice.Rda')
+
+gc()
+
+
+
+# ICE ---------------------------------------------------------------------
+
+results_ice <- results_template %>%
+  mutate(estimates = future_map(data, 
+                                ice_pipeline, 
+                                inside_formula = '~L{t}', 
+                                outside_formula = '~L{k}', 
+                                Tt=Tt))
+
+results_ice <- results_ice %>% select(-data)
+
+save(results_ice, file = 'results_ice.Rda')
+
+gc() 
+
+# Outcome Regression ------------------------------------------------------
+
+results_or <- results_template %>%
+  mutate(estimates = future_map(data, 
+                                or_pipeline, 
+                                y_formula = '~L{t}',
+                                l_formula = '~1',
+                                Tt=Tt,
+                                nreps=N_obs*100,
+                                .options = furrr_options(seed=TRUE)))
+
+results_or <- results_or %>% select(-data)
+
+
 ```
