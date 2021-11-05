@@ -1,5 +1,3 @@
-context('Parameter checks')
-
 test_that("parameter dimensions are correct", {
   Tt = 10
   Beta_id = generate_parameters(Tt)
