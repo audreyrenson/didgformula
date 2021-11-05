@@ -3,4 +3,5 @@
 export(calc_ydiffs)
 export(fit_treatment_models)
 export(generate_data)
+export(generate_parameters)
 export(iptw_pipeline)
