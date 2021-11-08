@@ -1,0 +1,60 @@
+---
+title: "Introduction to didgformula"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to didgformula}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+Suppose we observe $N$ iid copies of $(L_t, A_t, Y_t)$ over periods $t=0,1,...,T$, where $Y_t$ is a continuous outcome, $A_t$ is a binary (time-varying) treatment, and $L_t$ is a binary (time-varying) covariate. Denote potential outcomes $Y_t(\bar a)$, as the outcome that would have occurred at time $t$ had treatment history $\bar a$ been received. Say we with to estimate the quantity
+
+$$
+E[Y_t(\bar a) - Y_{t-1}(\bar a)]
+$$
+
+Say we are willing to make the following assumptions:
+
+1. SUTVA
+$$
+\bar A = \bar a \implies Y_t(\bar a) = Y_t
+$$
+2. Positivity
+$$
+P(A_t=a_t|\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1}) > 0
+$$
+if $P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})>0$.
+
+3. Parallel trends
+
+$$
+E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]=E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]
+$$
+
+
+Under assumptions 1-3, the quantity of interest is identified as:
+
+$$
+E[Y_t(\bar a) - Y_{t-1}(\bar a)] = \sum_{\bar l}E[Y_t - Y_{t-1}|\bar L=\bar l, \bar A=\bar a] \prod_{k=0}^tP(L_k=l_k |\bar A_{k-1}=\bar a_{k-1}, \bar L_{k-1}=\bar l_{k-1})
+$$
+I.e., the difference in differences g-formula. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`, by default targeting the above-describe quantity. 
+
+Often a quantity such as $E[Y_t(\bar a)$ is of more interest. Under the setting where $A_0=a_0$ for all individuals in the population, we have
+$$
+E[Y_t(\bar a) = E[Y_0] + \sum_{t=1}^T E[Y_t(\bar a) - Y_{t-1}(\bar a)]
+$$
+Thus the quantity $E[Y_t(\bar a)$ is also identified. However, it is helpful to focus on estimating the differences, since any quantities that we can identify under parallel trends are identified and estimated by way of the differences.
+
+```{r setup}
+library(didgformula)
+```
+
