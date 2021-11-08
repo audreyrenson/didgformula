@@ -1,14 +1,16 @@
-fit_two_outcome_models <- function(t, data, rhs_formula) {
+fit_two_outcome_models <- function(t, data, rhs_formula, family=gaussian) {
   #this is for estimating the innermost expectation of ICE, or for the outcome models in monte carlo
   #two at once because we typically want E[Y_t|L_t, A_t] and E[Y_{t-1}|L_t, A_t]
 
   models = list(2)
 
   models[[1]] = glm(formula = as.formula(glue::glue('Y{t-1}', rhs_formula)),
+                    family,
                     data=data,
                     subset=data[[glue::glue('A{t}')]] == 0)
 
   models[[2]] = glm(formula = as.formula(glue::glue('Y{t}', rhs_formula)),
+                    family,
                     data=data,
                     subset=data[[glue::glue('A{t}')]] == 0)
   return (models)
