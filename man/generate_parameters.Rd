@@ -14,7 +14,7 @@ generate_parameters(
   sd_Beta_Y = 0.2,
   range_ymeans = c(-5, 5),
   constant_dydu = 0.1,
-  ylink = "identity"
+  check_CDF = FALSE
 )
 }
 \arguments{
