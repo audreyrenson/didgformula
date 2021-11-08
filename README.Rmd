@@ -29,31 +29,6 @@ Only the development version is available so far. You can install it from [GitHu
 devtools::install_github("audreyrenson/didgformula")
 ```
 
-## Overview
-
-Suppose we observe $N$ iid copies of $(L_t, A_t, Y_t)$ over periods $t=0,1,...,T$, where $Y_t$ is a continuous outcome, $A_t$ is a binary (time-varying) treatment, and $L_t$ is a binary (time-varying) covariate. Denote potential outcomes $Y_t(\bar a)$, as the outcome that would have occurred at time $t$ had treatment history $\bar a$ been received. Say we with to estimate the quantity
-
-$$
-E[Y_t(\bar a) - Y_{t-1}(\bar a)]
-$$
-
-Say we are willing to make the following assumptions:
-
-1. SUTVA
-$$
-\bar A = \bar a \implies Y_t(\bar a) = Y_t
-$$
-2. Positivity
-3. Parallel trends
-4. Pre-identification
-
-Under assumptions 1-4, the quantity of interest is identified as:
-
-$$
-E[Y_t(\bar a) - Y_{t-1}(\bar a)] = \sum_{\bar l}E[Y_t - Y_{t-1}|\bar L=\bar l, \bar A=\bar a] \prod_{k=0}^tP(L_k=l_k |\bar A_{k-1}=\bar a_{k-1}, \bar L_{k-1}=\bar l_{k-1})
-$$
-I.e., the difference in differences g-formula. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`.
-
 ## Examples
 
 ### Continuous outcomes
