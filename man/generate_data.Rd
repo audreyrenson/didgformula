@@ -4,7 +4,13 @@
 \alias{generate_data}
 \title{Generate simulated data that meets the parallel trends assumption}
 \usage{
-generate_data(N, Tt, Beta, potential_outcomes = FALSE)
+generate_data(
+  N,
+  Tt,
+  Beta,
+  potential_outcomes = FALSE,
+  ylink = "rnorm_identity"
+)
 }
 \arguments{
 \item{N}{int. Number of independent observations}
@@ -14,6 +20,8 @@ generate_data(N, Tt, Beta, potential_outcomes = FALSE)
 \item{Beta}{list of length 4. Output of generate_parameters().}
 
 \item{potential_outcomes}{logical. Should outcomes and covariates be generated with exposure set to 0 at all times?}
+
+\item{ylink}{chr. One of "rnorm_identity", "rbinom_logit", or "rbinom_logit_hazard".}
 }
 \value{
 Data frame with N rows and (Tt+1)*3 + 2 columns - 'uid' is a unique identifier, 'U0' is an 'unmeasured' baseline covariate, L{t},A{t},Y{t} are covariates, exposures, and outcomes, respectively.

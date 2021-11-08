@@ -4,12 +4,13 @@
 #' @param Tt int. Number of periods, minus 1. I.e. there are Tt + 1 periods.
 #' @param Beta list of length 4. Output of generate_parameters().
 #' @param potential_outcomes logical. Should outcomes and covariates be generated with exposure set to 0 at all times?
+#' @param ylink chr. One of "rnorm_identity", "rbinom_logit", or "rbinom_logit_hazard".
 #'
 #' @return Data frame with N rows and (Tt+1)*3 + 2 columns - 'uid' is a unique identifier, 'U0' is an 'unmeasured' baseline covariate, L{t},A{t},Y{t} are covariates, exposures, and outcomes, respectively.
 #' @export
 #'
 #' @examples
-generate_data <- function(N, Tt, Beta, potential_outcomes=FALSE){
+generate_data <- function(N, Tt, Beta, potential_outcomes=FALSE, ylink = "rnorm_identity"){
 
   df = data.frame(uid       = seq_len(N),
                   intercept = 1,
@@ -19,26 +20,49 @@ generate_data <- function(N, Tt, Beta, potential_outcomes=FALSE){
   #what variables does each variable depend on?
   vars_L = function(t) c('intercept', if(t<1 | potential_outcomes) 'zeros' else glue::glue('A{t-1}'))
   vars_A = function(t) c('intercept', 'U0', glue::glue('L{t}'))
-  vars_Y = function(t) c('intercept', 'U0', glue::glue('L{t}'), if(potential_outcomes) 'zeros' else glue::glue('A{t}'), 'U0timesLt')
+  vars_Y = function(t) c('intercept', 'U0', glue::glue('L{t}'), if(potential_outcomes) 'zeros' else glue::glue('A{t}'), glue::glue('U0timesL{t}'))
 
 
   for(t in 0:Tt) {
     df[[glue::glue('L{t}')]] = rbinom_logit(X=df[vars_L(t)], Beta=Beta$L[t+1, ], N=N)
-    df[['U0timesLt']] = df[[glue::glue('L{t}')]] * df$U0
+    df[[glue::glue('U0timesL{t}')]] = df[[glue::glue('L{t}')]] * df$U0
 
     if (t<1) {
       df[[glue::glue('A{t}')]] = 0
     } else {
       df[[glue::glue('A{t}')]] = rbinom_logit(X=df[vars_A(t)], Beta=Beta$A[t+1, ], N=N)^(1 - df[[glue::glue('A{t-1}')]] == 1) #monotonic treatment assignment
     }
-
-    df[[glue::glue('Y{t}')]] = rnorm_identity(X=df[vars_Y(t)], Beta=Beta$Y[t+1, ], N=N)
-
   }
-  return( df[, -which( names(df) %in% c('intercept','zeros', 'U0timesLt') ) ] )
+
+  df = cbind(df, simulate_y(df=df, Tt=Tt, vars_Y=vars_Y, Beta_Y=Beta$Y, ylink=ylink))
+
+  return( df[, -grep( c('intercept|zeros|U0times'), names(df))] )
 }
 
 # generate data from a binomial distribution based on a linear-logistic model
 rbinom_logit <- function(X, Beta, N, n=1) rbinom(n=N, p=plogis(as.matrix(X) %*% Beta), size=n)
-# generate data from a normal distribution based on a linear-identity model
-rnorm_identity <- function(X, Beta, N, sd=1) rnorm(n=N, mean = as.matrix(X) %*% Beta, sd)
+
+simulate_y <- function(df, Tt, vars_Y, Beta_Y,
+                       ylink='rnorm_identity', binomial_n=1, ...) {
+
+  eta_ti = sapply(0:Tt, function(t) as.matrix(df[vars_Y(t)]) %*% Beta_Y[t+1, ])
+
+  if(ylink == 'rnorm_identity') {
+    Y_ti = apply(eta_ti, 2, function(mu) rnorm(nrow(df), mean=mu, ...))
+  } else if (ylink=='rbinom_logit') {
+    Y_ti = apply(eta_ti, 2, function(expitp) rbinom(n=nrow(df), prob = plogis(expitp), size=binomial_n))
+  } else if (ylink=='rbinom_logit_hazard') {
+    p_ti = plogis(eta_ti)
+    S_ti = 1 - matrixStats::rowCumsums(p_ti)
+    h_ti = p_ti / S_ti
+    Y_ti = apply(h_ti, MARGIN=2, FUN=function(h) rbinom(nrow(df), prob=h, size=binomial_n))
+    already_had_event = cbind(FALSE, matrixStats::rowCummaxs(Y_ti)[, -ncol(Y_ti)] == 1 )
+    Y_ti [already_had_event] = 0
+  } else {
+    stop('ylink must be one of "rnorm_identity", "rbinom_logit", or "rbinom_logit_hazard"')
+  }
+  colnames(Y_ti) = sapply(0:Tt, function(t) glue::glue('Y{t}'))
+  return (as.data.frame(Y_ti))
+}
+
+
