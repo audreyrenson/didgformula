@@ -3,6 +3,5 @@
 ^scratch$
 ^LICENSE\.md$
 ^README\.Rmd$
-^vignettes$
 ^doc$
 ^Meta$
