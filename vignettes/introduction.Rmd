@@ -156,5 +156,20 @@ EYat_or = tibble::tibble(t=1:time_periods, estimate = EY0_data + cumsum(estimate
 combine_estimates(EYat_truth, EYat_iptw, EYat_ice, EYat_or, Tt=time_periods)
 ```
 
+## Bootstrap standard errors
+
+As of this writing, analytic standard errors for the estimators in `didgformula` have not been derived. We make conveniently available bootstrap standard errors for any of the estimators implemented in this package via the `bootstrap_se` function. Simply pass the `*_pipeline()` function corresponding to the relevant estimator as the `estimator` argument, along with named arguments to that function as the `...`. These are standard error estimates for the estimates of $E[Y_t(\bar a)-Y_{t-1}(\bar a)]$ (or $g(E[Y_t(\bar a)]) - g(E[Y_{t-1}(\bar a)])$ in the case of a generalized parallel trends workflow - see for example the survival-outcomes vignette).
+
+```{r}
+
+se_iptw = bootstrap_se(data = df_linear, 
+                       nboots = 10, #obviously you should use many more than 10
+                       estimator = iptw_pipeline,
+                       rhs_formula = '~L{t}',
+                       Tt = time_periods)
+
+se_iptw                       
+
+```
 
 

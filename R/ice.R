@@ -73,24 +73,3 @@ ice_pipeline <- function(data, inside_formula, outside_formula, Tt, inside_famil
   }
 
 }
-
-ice_bootstrap_se <- function(data, inside_formula, outside_formula, Tt, nboots, tibble=TRUE) {
-
-  boot_data <- many_bootstraps(data, nboots, Tt)
-  boot_estimates <- sapply(boot_data,
-                           ice_pipeline,
-                           inside_formula=inside_formula,
-                           outside_formula=outside_formula,
-                           Tt=Tt,
-                           tibble=FALSE,
-                           simplify=FALSE)
-  boot_se <- matrixStats::colSds(  Reduce(rbind, boot_estimates) )
-
-  if(!tibble) {
-    return (boot_se)
-  } else {
-    return ( tibble::tibble(t = 1:length(boot_se),
-                            se = boot_se) )
-  }
-
-}

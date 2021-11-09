@@ -77,25 +77,3 @@ or_pipeline <- function(data, y_formula, l_formula, y_family='gaussian', Tt, nre
   }
 }
 
-or_bootstrap_se <- function(data, y_formula, l_formula, Tt, nreps, nboots, tibble=TRUE) {
-
-  boot_data <- many_bootstraps(data, nboots, Tt)
-  boot_estimates <- sapply(boot_data,
-                           or_pipeline,
-                           y_formula=y_formula,
-                           l_formula=l_formula,
-                           Tt=Tt,
-                           nreps=nreps,
-                           tibble=FALSE,
-                           simplify=FALSE)
-  boot_se <- matrixStats::colSds(  Reduce(rbind, boot_estimates) )
-
-  if(!tibble) {
-    return (boot_se)
-  } else {
-    return ( tibble::tibble(t = 1:length(boot_se),
-                            se = boot_se) )
-  }
-
-}
-
