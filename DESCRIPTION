@@ -27,5 +27,11 @@ Config/testthat/edition: 3
 Imports: 
     matrixStats,
     glue,
-    tibble
+    tibble,
+    dplyr,
+    tidyr,
+    ggplot2,
+    magrittr,
+    purrr,
+    stringr
 VignetteBuilder: knitr
