@@ -1,6 +1,7 @@
 ---
 title: "Introduction to didgformula"
 output: rmarkdown::html_vignette
+author: Audrey Renson
 vignette: >
   %\VignetteIndexEntry{Introduction to didgformula}
   %\VignetteEngine{knitr::rmarkdown}
@@ -39,7 +40,7 @@ if $P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})>0$.
 $$
 E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]=E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]
 $$
-
+for $k\in\{0,...,t\}$, and $t \in \{0,1,..., T\}$.
 
 Under assumptions 1-3, the quantity of interest is identified as:
 
@@ -54,7 +55,106 @@ E[Y_t(\bar a) = E[Y_0] + \sum_{t=1}^T E[Y_t(\bar a) - Y_{t-1}(\bar a)]
 $$
 Thus the quantity $E[Y_t(\bar a)$ is also identified. However, it is helpful to focus on estimating the differences, since any quantities that we can identify under parallel trends are identified and estimated by way of the differences.
 
-```{r setup}
+## Simulating data under parallel trends 
+
+`didgformula` contains basic functionality for simple simulations under parallel trends.  The default setup has one unmeasured baseline covariate, $U_0$, time-varying binary covariates $L_t$, binary treatments $A_t$, and continuous outcomes $Y_t$, observed over periods $t=0,1,...,T$. First we select parameters for the data-generating models, which are generated from a normal distribution by default (with the exception of $U_0$ which always has prevalence $0.5$). For now the parameters are packaged as a list of matrices with $T+1$ rows and the same number of columns as coefficients in the data-generating models:
+
+
+```{r parameters}
 library(didgformula)
+
+set.seed(10)
+N_obs = 1e4
+time_periods = 5
+parameters = generate_parameters(Tt=time_periods)
+parameters
+
 ```
+
+To simulate, this list gets passed into `generate_data()` as the `Beta` parameter. By default, $A_t$ and $L_t$ following a binary logistic model and $Y_t$ follows a normal identity-link model (the residual variance is set to $1$).
+
+```{r generate_data}
+df_linear <- generate_data(N=N_obs, Tt=time_periods, Beta = parameters)
+head(df_linear)
+```
+
+We can calculate the true values of the parameters $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$ by generating a large number of potential outcomes under the same data-generating mechanism. The estimates are just column means of the differences `Yt`-`Yt-1` in the simulated potential outcomes data:
+
+```{r}
+df_po = generate_data(N=N_obs*10, Tt=time_periods, Beta=parameters, ylink='rnorm_identity', potential_outcomes = TRUE)
+
+truth = estimate_truth(df_po, Tt=time_periods)
+truth
+```
+
+The data-generating mechanism used by default in `generate_data()` is:
+
+$$ U_0 \sim \text{Bernoulli}(0.5) $$
+$$ L_t \sim \text{Bernoulli}(\text{logit}^{-1}[\gamma_{0t} + \gamma_{1t}A_{t-1}]) $$
+$$ A_0 = 0$$
+$$(A_t | A_{t-1} = 1) = 1$$
+$$(A_t | A_{t-1} = 0) \sim \text{Bernoulli}(\text{logit}{-1}[\alpha_{0t} +\alpha_{1t}U_0 + \alpha_{2t}L_t])$$
+$$Y_t \sim \text{Normal}(\beta_{0t} + \beta_{1t}A_t + \beta_{2t}L_t + \beta_3U_0 + \beta_4U_0L_t, \sigma^2_t)$$
+This data-generating mechanism is consistent with with parallel trends, provable by the fact that $L_t \coprod U_0 |\bar L_{t-1}, \bar A_{t-1}=\bar a_{t-1}$ and $\frac{\partial E[Y_t|\bar L_t, \bar A_t=\bar a_t, U_0]}{\partial U_0}=\frac{\partial E[Y_{t-1}|\bar L_t, \bar A_t=\bar a_t, U_0]}{\partial U_0}=0.1$. We can check that parallel trends is approximately satisfied in the simulated potential outcomes data using the packaged function `pt_deviation_histograms(.)`.
+
+```{r histograms}
+pt_deviation_histograms(df_po, Tt=time_periods)
+
+```
+
+The matrix of histograms has $t$ on the x-axis and $k$ on the y-axis, so that the $(t, k)$th cell displays estimates of $E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]=E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]$ across possible values of $\bar L_k$ (actually, just $L_k$ is sufficient based on the data-generating mechanism). These estimates should look like unbiased estimates of zero (each cell should look like it has mean 0, the red line). If not, something might be wrong with the data-generating mechanism (but first try generating a larger number of potential outcomes, since restricting to $\bar A_{k-1}=\bar a_{k-1}$ can result in very small sample sizes). To zoom in on a particular value of $k$, we can use the `k` argument in `pt_deviation_histograms(.)`:
+
+
+```{r histograms_k}
+pt_deviation_histograms(df_po, Tt=time_periods, k=2)
+
+```
+
+## Estimation
+
+All the estimation pipelines in `didgformula` are written as functions called `*_pipeline()` and have similar (but not exactly the same) arguments. All target the estimands $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$, for $t=1,2,...,T$.  Currently, all expect a wide-format dataset like the one returned by `generate_data(.)`, with outcome columns labeled `Y0`,`Y1`,..., treatments `A0`, `A1`, ..., and for each covariate `L`, `L0`, `L1`, .... The covariates do not need to be called `L` but they do need to be numbered. 
+
+Formulas in `didgformula` are character (not formula), only right-hand-side, and use `glue`-style string interpolation to interpret time indicators. For example, `iptw_pipeline()` expects a right-hand-side formula for the treatment models via the argument `rhs_formula`. For example, the formula `"~x{t}+x{t-1}+y{t}` says that in the model for `A1`, covariates `x1`, `x0`, and `y1` should be included as main terms, and in the model for `A2`, covariates `x2`, `x1`, and `y2`, etc. All these covariates need to be in the dataset and labeled accordingly. The formulas for `or_pipeline` and `ice_pipeline` work similarly.
+
+For example:
+```{r}
+estimates_iptw = iptw_pipeline(data = df_linear, rhs_formula = '~L{t}', Tt=time_periods)
+estimates_iptw
+```
+
+The column `estimate` gives estimates of $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$ for each $t$ in the column `t`.
+
+`ice_pipeline` fits the iterated conditional estimator. `inside_formula` receives a right-hand-side formula for the outcome regression estimators of the innermost conditional expectations (there are two of them for each $t$, one for $t$ and one for $t-1$). `outside_formula` refers to thee models for every nested expectation except the innermost one (note that the time indicator is labeled `{k}` for the outside formula.)
+
+```{r}
+estimates_ice = ice_pipeline(data = df_linear, inside_formula = '~L{t}', outside_formula = '~L{k}', Tt=time_periods)
+estimates_ice
+```
+
+`or_pipeline` fits the monte-carlo outcome regression estimator, and accepts right-hand side formulas for the outcome models (`y_formula`, and similarly there are two models fit for each $t$) and covariate models (`l_formula`).
+```{r}
+estimates_or = or_pipeline(data = df_linear, y_formula = '~L{t}', l_formula = '~1', Tt=time_periods, nreps=N_obs) #usually nreps should be much larger but in this example it appears fine
+estimates_or
+```
+We can compare all these estimates (which should be very precisely similar) along with the estimated "truth" (which should be pretty close):
+
+```{r}
+combine_estimates(truth, estimates_iptw, estimates_ice, estimates_or, Tt=time_periods)
+```
+
+If we were interested in $E[Y_t(\bar a)]$, since the data-generating mechanism has $A_0=0$ with probability 1, we have:
+
+```{r}
+EY0_truth = mean(df_po$Y0)
+EY0_data  = mean(df_linear$Y0)
+
+EYat_truth = tibble::tibble(t=1:time_periods, estimate = EY0_truth + cumsum(truth$estimate))
+EYat_iptw = tibble::tibble(t=1:time_periods, estimate = EY0_data + cumsum(estimates_iptw$estimate))
+EYat_ice = tibble::tibble(t=1:time_periods, estimate = EY0_data + cumsum(estimates_ice$estimate))
+EYat_or = tibble::tibble(t=1:time_periods, estimate = EY0_data + cumsum(estimates_or$estimate))
+
+combine_estimates(EYat_truth, EYat_iptw, EYat_ice, EYat_or, Tt=time_periods)
+```
+
+
 

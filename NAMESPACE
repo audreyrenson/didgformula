@@ -2,8 +2,10 @@
 
 export("%>%")
 export(calc_ydiffs)
+export(combine_estimates)
 export(estimate_bias_variance)
 export(estimate_ci_coverage)
+export(estimate_truth)
 export(fit_treatment_models)
 export(generate_data)
 export(generate_parameters)
