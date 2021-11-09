@@ -32,9 +32,17 @@ combine_estimates <- function(truth, iptw, ice, or, Tt) {
 #' @export
 #'
 #' @examples
-estimate_truth <- function(df_po, Tt) {
+estimate_truth <- function(df_po, Tt, link_fun=NULL) {
 
-  return( tibble::tibble(t=1:Tt, estimate = colMeans(calc_ydiffs(df_po, Tt))) )
+  if(is.null(link_fun)) {
+    return( tibble::tibble(t=1:Tt, estimate = colMeans(calc_ydiffs(df_po, Tt))) )
+  } else {
+    stopifnot(is.function(link_fun))
+    ymeans = colMeans(df_po[ , sapply(0:Tt, function(t) glue('Y{t}')) ])
+    return( tibble::tibble(t=1:Tt, estimate = diff(link_fun(ymeans)) ) )
+  }
+
+
 }
 
 

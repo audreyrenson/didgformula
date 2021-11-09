@@ -1,4 +1,4 @@
-fit_two_outcome_models <- function(t, data, rhs_formula, family=gaussian) {
+fit_two_outcome_models <- function(t, data, rhs_formula, family) {
   #this is for estimating the innermost expectation of ICE, or for the outcome models in monte carlo
   #two at once because we typically want E[Y_t|L_t, A_t] and E[Y_{t-1}|L_t, A_t]
 
@@ -25,13 +25,13 @@ fit_outer_exp_model <- function(k, data, preds, rhs_formula) {
       subset=data[[glue::glue('A{k}')]] == 0 )
 }
 
-recursive_ice <- function(t, k, data, inside_formula, outside_formula) {
+recursive_ice <- function(t, k, data, inside_formula, outside_formula, inside_family) {
   if(k==t) {
-    two_models = fit_two_outcome_models(t=k, data=data, rhs_formula = inside_formula)
-    predictions = sapply(two_models, predict, newdata=data, type='response', simplify=TRUE)
+    two_models = fit_two_outcome_models(t=k, data=data, rhs_formula = inside_formula, family=inside_family)
+    predictions = sapply(two_models, predict, newdata=data, type='link', simplify=TRUE)
     return (  predictions[,2] - predictions[,1] )
   } else {
-    preds = recursive_ice(t, k+1, data, inside_formula, outside_formula)
+    preds = recursive_ice(t, k+1, data, inside_formula, outside_formula, inside_family)
     one_model = fit_outer_exp_model(k, data=data, preds=preds, rhs_formula=outside_formula)
     return (predict(one_model, newdata=data))
   }
@@ -53,14 +53,15 @@ estimate_ice <- function(ice_diffs, data) {
 #' @export
 #'
 #' @examples
-ice_pipeline <- function(data, inside_formula, outside_formula, Tt, tibble=TRUE) {
+ice_pipeline <- function(data, inside_formula, outside_formula, Tt, inside_family='gaussian', tibble=TRUE) {
 
   ice_diffs <- sapply(1:Tt,
                       recursive_ice,
                       k=0,
                       data=data,
                       inside_formula=inside_formula,
-                      outside_formula=outside_formula)
+                      outside_formula=outside_formula,
+                      inside_family=inside_family)
 
   ice_estimates <- estimate_ice(ice_diffs, data=data)
 

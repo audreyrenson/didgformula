@@ -8,8 +8,8 @@ fit_covariate_models <- function(data, rhs_formula, Tt) {
   return (sapply(1:Tt, fit_one_model, simplify=FALSE))
 }
 
-fit_outcome_models <- function(data, rhs_formula, Tt) {
-  return (sapply(1:Tt, fit_two_outcome_models, data=data, rhs_formula=rhs_formula, simplify=FALSE))
+fit_outcome_models <- function(data, rhs_formula, family, Tt) {
+  return (sapply(1:Tt, fit_two_outcome_models, data=data, rhs_formula=rhs_formula, family=family, simplify=FALSE))
 }
 
 get_replicate_data <- function(data, nreps) {
@@ -24,7 +24,7 @@ simulate_Lt <- function(replicate_data, cov_model, t) {
 simulate_Ydifft <- function(replicate_data,
                             outcome_models, #list of 2 glm objects, for t-1 and t
                             t) {
-  outcome_preds = sapply(outcome_models, predict, newdata=replicate_data, type="response", simplify = TRUE)
+  outcome_preds = sapply(outcome_models, predict, newdata=replicate_data, type="link", simplify = TRUE)
   return ( outcome_preds[,2] - outcome_preds[,1] )
 }
 
@@ -59,12 +59,12 @@ estimate_or <- function(simulated_data, Tt) {
 #' @export
 #'
 #' @examples
-or_pipeline <- function(data, y_formula, l_formula, Tt, nreps, tibble=TRUE) {
+or_pipeline <- function(data, y_formula, l_formula, y_family='gaussian', Tt, nreps, tibble=TRUE) {
 
 
   rep_data = get_replicate_data(data, nreps)
   cov_models = fit_covariate_models(data, rhs_formula = l_formula, Tt=Tt)
-  out_models = fit_outcome_models(data, rhs_formula = y_formula, Tt=Tt)
+  out_models = fit_outcome_models(data, rhs_formula = y_formula, family=y_family, Tt=Tt)
   rep_data = get_replicate_data(data, nreps = nreps)
   sim_data = simulate_fulldata(rep_data, cov_models, out_models, Tt)
   or_estimates = estimate_or(sim_data, Tt)

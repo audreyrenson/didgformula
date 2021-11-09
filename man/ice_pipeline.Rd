@@ -4,7 +4,14 @@
 \alias{ice_pipeline}
 \title{Iterated conditional DID g-formula estimator}
 \usage{
-ice_pipeline(data, inside_formula, outside_formula, Tt, tibble = TRUE)
+ice_pipeline(
+  data,
+  inside_formula,
+  outside_formula,
+  Tt,
+  inside_family = "gaussian",
+  tibble = TRUE
+)
 }
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.}

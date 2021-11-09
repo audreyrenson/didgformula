@@ -4,7 +4,15 @@
 \alias{or_pipeline}
 \title{Outcome regression DID g-formula estimator}
 \usage{
-or_pipeline(data, y_formula, l_formula, Tt, nreps, tibble = TRUE)
+or_pipeline(
+  data,
+  y_formula,
+  l_formula,
+  y_family = "gaussian",
+  Tt,
+  nreps,
+  tibble = TRUE
+)
 }
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.}

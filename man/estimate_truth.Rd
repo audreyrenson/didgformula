@@ -4,7 +4,7 @@
 \alias{estimate_truth}
 \title{Estimate true values of the parameters from the simulated potential outcomes}
 \usage{
-estimate_truth(df_po, Tt)
+estimate_truth(df_po, Tt, link_fun = NULL)
 }
 \arguments{
 \item{df_po}{data frame. Return value of \code{generate_data(potential_outcomes=TRUE)}}
