@@ -40,7 +40,12 @@ generate_parameters <- function(Tt, mu_Beta_L=0.2, mu_Beta_A=0.2,
 
   Beta_Y[, 1] = mean_Y - Beta_Y[, 2]*mean_U - Beta_Y[, 3]*mean_L - Beta_Y[,4]*mean_A_marginal - Beta_Y[,5]*mean_U*mean_L #last piece only works for binary independent  L & U
   Beta_A[, 1] = -log(1 / mean_A_conditional - 1) - Beta_A[, 2]*mean_U - Beta_A[, 3]*mean_L
-  Beta_L[, 1] = -log(1 / mean_L - 1) - Beta_L[, 2]*mean_A_marginal
+  Beta_L[, 1] = -log(1 / mean_L - 1) - Beta_L[, 2]*mean_A_marginal #fix - should depend on At-1 not At
+
+  colnames(Beta_Y) = c('intercept', 'U0', 'Lt', 'At', 'LtU0')
+  colnames(Beta_A) = c('intercept', 'U0', 'Lt')
+  colnames(Beta_L) = c('intercept', 'At-1')
+
 
   if(check_CDF) check_cdf(Beta_Y)
 

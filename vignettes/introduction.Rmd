@@ -46,7 +46,7 @@ Under assumptions 1-3, the quantity of interest is identified as:
 $$
 E[Y_t(\bar a) - Y_{t-1}(\bar a)] = \sum_{\bar l}E[Y_t - Y_{t-1}|\bar L=\bar l, \bar A=\bar a] \prod_{k=0}^tP(L_k=l_k |\bar A_{k-1}=\bar a_{k-1}, \bar L_{k-1}=\bar l_{k-1})
 $$
-I.e., the difference in differences g-formula. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`, by default targeting the above-describe quantity. 
+I.e., the difference in differences g-formula. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`, by default targeting the above-described quantity. 
 
 Often a quantity such as $E[Y_t(\bar a)$ is of more interest. Under the setting where $A_0=a_0$ for all individuals in the population, we have
 $$
