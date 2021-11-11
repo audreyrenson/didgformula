@@ -38,3 +38,8 @@ test_that('dydu is constant across t=1,2,...,Tt', {
   # expect_equal( length(unique(derivs_logit)), 1)
 
 })
+
+test_that('can generate binomial identity parameters iteratively', {
+  set.seed(2)
+  expect_true( length(generate_parameters_until_noerror(Tt=5, range_ymeans=c(0.4, 0.6))) > 0 )
+})

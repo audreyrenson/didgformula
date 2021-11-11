@@ -10,7 +10,11 @@
 #' @export
 #'
 #' @examples
-generate_data <- function(N, Tt, Beta, potential_outcomes=FALSE, ylink = "rnorm_identity"){
+generate_data <- function(N,
+                          Tt,
+                          Beta,
+                          potential_outcomes=FALSE,
+                          ylink = "rnorm_identity"){
 
   df = data.frame(uid       = seq_len(N),
                   intercept = 1,
@@ -51,6 +55,8 @@ simulate_y <- function(df, Tt, vars_Y, Beta_Y,
     Y_ti = apply(eta_ti, 2, function(mu) rnorm(nrow(df), mean=mu, ...))
   } else if (ylink=='rbinom_logit') {
     Y_ti = apply(eta_ti, 2, function(expitp) rbinom(n=nrow(df), prob = plogis(expitp), size=binomial_n))
+  } else if (ylink=="rbinom_identity") {
+    Y_ti = apply(eta_ti, 2, function(p) rbinom(n=nrow(df), prob = p, size=binomial_n))
   } else if (ylink=='rbinom_logit_hazard') {
     p_ti = plogis(eta_ti)
     S_ti = 1 - matrixStats::rowCumsums(p_ti)
@@ -59,7 +65,7 @@ simulate_y <- function(df, Tt, vars_Y, Beta_Y,
     already_had_event = cbind(FALSE, matrixStats::rowCummaxs(Y_ti)[, -ncol(Y_ti)] == 1 )
     Y_ti [already_had_event] = 0
   } else {
-    stop('ylink must be one of "rnorm_identity", "rbinom_logit", or "rbinom_logit_hazard"')
+    stop('ylink must be one of "rnorm_identity", "rbinom_identity", "rbinom_logit", or "rbinom_logit_hazard"')
   }
   colnames(Y_ti) = sapply(0:Tt, function(t) glue::glue('Y{t}'))
   return (as.data.frame(Y_ti))

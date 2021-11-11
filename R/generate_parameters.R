@@ -20,7 +20,7 @@
 generate_parameters <- function(Tt, mu_Beta_L=0.2, mu_Beta_A=0.2,
                                 mu_Beta_Y=0.2, sd_Beta_L=0.2, sd_Beta_A=0.2,
                                 sd_Beta_Y=0.2, range_ymeans = c(-5, 5),
-                                constant_dydu = 0.1, check_CDF=FALSE) {
+                                constant_dydu = 0.1, check_CDF=FALSE, check_rbinom_identity=FALSE) {
 
   Beta_U = -log(1 / 0.5 - 1)
   mean_U = plogis(Beta_U)
@@ -48,6 +48,7 @@ generate_parameters <- function(Tt, mu_Beta_L=0.2, mu_Beta_A=0.2,
 
 
   if(check_CDF) check_cdf(Beta_Y)
+  if(check_rbinom_identity) check_rbinom_identity(Beta_Y)
 
   return ( list(U=Beta_U, L=Beta_L, A=Beta_A, Y=Beta_Y))
 
@@ -69,27 +70,43 @@ check_cdf <- function(Beta_Y) {
   if (max_F > 1) warning(glue::glue('If simulating time-to-event outcomes, you should reduce range_ymeans because parameters imply max(CDF)={max_F}.'))
 }
 
-#   } else if (ylink == 'rbinlogit') {
-#
-#
-#     # find the conditional ORs for Y by U that yeild a constant risk difference
-#     # this doesn't quite work and I need to put this problem away for the moment, my brain isn't working
-#     # currently there are a lot of hard-coded indices here, make this more dynamic/explicit
-#     combos <- expand.grid(t = 1:nrow(Beta_Y) - 1, int = 1,  L=c(0,1)) #don't need to include A because we only care about when A==0
-#     combos$prY_Uequals0 = plogis( Beta_Y[combos$t+1, 1] + Beta_Y[combos$t+1, 2]*combos$L )
-#     combos$prY_Uequals1 = combos$prY_Uequals0 + constant_dydu
-#
-#     #then figure out what odds ratios are needed
-#     log_odds_ratio <- function(p1, p0) log( (p1/(1-p1)) / (p0/(1-p0)) )
-#     combos$log_or_YU = log_odds_ratio(combos$prY_Uequals1, combos$prY_Uequals0)
-#
-#     #then fill in the right terms
-#     Beta_Y[, 2] = combos$log_or_YU[combos$L == 0]
-#     Beta_Y[, 5] = combos$log_or_YU[combos$L == 1] - combos$log_or_YU[combos$L == 0]
-#
-#     return(Beta_Y)
-#   } else {
-#     stop("ylink must be either 'identity' or 'logit'")
-#   }
-#
-# }
+check_rbinom_identity <- function(Beta_Y, silently=FALSE) {
+  #throw error if any pr(y|x) outside (0,1)
+  Beta_Y_min = Beta_Y_max = Beta_Y
+  Beta_Y_min[,-1][Beta_Y_min[,-1] > 0] = 0
+  Beta_Y_max[,-1][Beta_Y_max[,-1] < 0] = 0
+
+  below_0 = any(rowSums(Beta_Y_min) < 0)
+  exceeds_1 = any(rowSums(Beta_Y_max) > 1)
+
+  beta_status = below_0 + exceeds_1
+
+  if(silently) {
+    return (beta_status == 0)
+  } else if(below_0 & exceeds_1) {
+    stop('Beta_Y implies probabilities both <0 and >1')
+  } else if (below_0 & !exceeds_1) {
+    stop('Beta_Y implies probabilities <0')
+  } else if (!below_0 & exceeds_1) {
+    stop('Beta_Y implies probabilities >1')
+  } else {
+    return (TRUE)
+  }
+}
+
+generate_parameters_until_noerror <- function(..., maxiter=20, original_maxiter=maxiter) {
+
+  Beta = generate_parameters(..., check_rbinom_identity=FALSE)
+
+  if( maxiter == 0 )  {
+    stop('Maximum number of iterations reached without a solution')
+  } else if(!check_rbinom_identity(Beta$Y, silently=TRUE)) { #solution not found yet, so iterate
+      recursive_args <- as.list(match.call()[-1])
+      recursive_args[['original_maxiter']] = original_maxiter
+      recursive_args[['maxiter']] <- maxiter - 1
+      return ( do.call(generate_parameters_until_noerror, recursive_args) )
+  } else { #solution found
+    return ( c(Beta, list(iterations = original_maxiter - maxiter + 1)) )
+  }
+}
+
