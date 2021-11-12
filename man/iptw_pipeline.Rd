@@ -4,7 +4,7 @@
 \alias{iptw_pipeline}
 \title{Estimate the DID g-formula using inverse-probability-of-treatment-weights.}
 \usage{
-iptw_pipeline(data, rhs_formula, Tt, tibble = TRUE)
+iptw_pipeline(data, rhs_formula, Tt, tibble = TRUE, binomial_n = 1)
 }
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.}
@@ -14,6 +14,8 @@ iptw_pipeline(data, rhs_formula, Tt, tibble = TRUE)
 \item{Tt}{int. Final period in dataset (t=0,1,...,Tt)}
 
 \item{tibble}{logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?}
+
+\item{binomial_n}{int length nrow(data). Group sizes for aggregate binomial data.}
 }
 \value{
 Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).
