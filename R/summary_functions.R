@@ -32,18 +32,29 @@ combine_estimates <- function(truth, iptw, ice, or, Tt) {
 #' @export
 #'
 #' @examples
-estimate_truth <- function(df_po, Tt, link_fun=NULL, binomial_n=1) {
-  row_freqs = rep(1, nrow(df_po))*binomial_n #return a column of 1's if not aggregate binomial data
+estimate_truth <- function(df_po, Tt, link_fun=NULL, binomial_n=1, type='differences') {
+
+  row_freqs = rep(1, nrow(df_po))*binomial_n #frequecy weights applied to the rows of df_po. Return a column of 1's if not aggregate binomial data
+  y_colnames = sapply(0:Tt, function(t) glue('Y{t}'))
+  y_means = colSums(df_po[ , y_colnames ]) / sum(row_freqs)
 
   if(is.null(link_fun)) {
-    return( tibble::tibble(t=1:Tt, estimate = colSums(calc_ydiffs(df_po, Tt)) / sum(row_freqs)) )
+    link_fun = function(x) x
   } else {
     stopifnot(is.function(link_fun))
-    ymeans = colSums(df_po[ , sapply(0:Tt, function(t) glue('Y{t}')) ]) / sum(row_freqs)
-    return( tibble::tibble(t=1:Tt, estimate = diff(link_fun(ymeans)) ) )
   }
 
-
+  if(type=='differences') {
+     return(
+       tibble::tibble(t=1:Tt, estimate = diff(link_fun(y_means)))
+     )
+  } else if(type=='levels') {
+    return(
+      tibble::tibble(t=0:Tt, estimate = y_means)
+    )
+  } else {
+    stop('type must be either "differences" or "levels"')
+  }
 }
 
 
