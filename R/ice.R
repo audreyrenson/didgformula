@@ -48,8 +48,10 @@ recursive_ice <- function(t, k, data, inside_formula, outside_formula, inside_fa
   }
 }
 
-estimate_ice <- function(ice_diffs, data, binomial_n = 1) {
-  freq_w = binomial_n / ( binomial_n * sum(rep(1,nrow(data))) )
+estimate_ice <- function(ice_diffs, data, binomial_n = NULL) {
+
+  if(is.null(binomial_n)) binomial_n = rep(1, nrow(data))
+  freq_w = binomial_n / sum(binomial_n)
 
   return ( colSums(ice_diffs * freq_w) )
 }
@@ -77,7 +79,7 @@ ice_pipeline <- function(data, inside_formula, outside_formula, Tt, inside_famil
                       inside_family=inside_family,
                       binomial_n=binomial_n)
 
-  ice_estimates <- estimate_ice(ice_diffs, data=data)
+  ice_estimates <- estimate_ice(ice_diffs, data=data, binomial_n)
 
   if(!tibble) {
     return (ice_estimates)
