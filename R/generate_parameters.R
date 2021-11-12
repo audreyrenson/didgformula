@@ -35,7 +35,7 @@ generate_parameters <- function(Tt, mu_Beta_L=0.2, mu_Beta_A=0.2,
   # balancing intercepts
   mean_Y = runif(Tt + 1, min = range_ymeans[1], max = range_ymeans[2])
   mean_L = runif(Tt + 1, min = 0.1, max = 0.5)
-  mean_A_conditional = runif(Tt + 1, min = 1/(Tt^2), max = 1/(Tt^2) + 2/Tt) # this is a function of T to avoid very small pr(A_t=0) for large t
+  mean_A_conditional = runif(Tt + 1, min = 1/(Tt^2), max = 1/(Tt^2) + 1/Tt) # this is a function of T to avoid very small pr(A_t=0) for large t
   mean_A_marginal = 1 - cumprod(1 - mean_A_conditional)  # basically a kaplan meier risk function
 
   Beta_Y[, 1] = mean_Y - Beta_Y[, 2]*mean_U - Beta_Y[, 3]*mean_L - Beta_Y[,4]*mean_A_marginal - Beta_Y[,5]*mean_U*mean_L #last piece only works for binary independent  L & U

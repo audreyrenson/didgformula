@@ -1,4 +1,6 @@
 test_that("bootstrap_se returns results", {
+  set.seed(143) #always show the computer some love
+
   Tt=4
   N=100
   df = generate_data(N=N, Tt=Tt, Beta=generate_parameters(Tt=4))
