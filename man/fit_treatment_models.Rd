@@ -4,7 +4,7 @@
 \alias{fit_treatment_models}
 \title{Fit treatment models for IPTW}
 \usage{
-fit_treatment_models(data, rhs_formula, Tt)
+fit_treatment_models(data, rhs_formula, Tt, ...)
 }
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.}
@@ -12,6 +12,8 @@ fit_treatment_models(data, rhs_formula, Tt)
 \item{rhs_formula}{chr. Formulas to use Format: '~L\{t\}+L\{t-1\}' etc.}
 
 \item{Tt}{int. Final period in dataset (t=0,1,...,Tt)}
+
+\item{...}{Parameters passed to \code{glm}.}
 }
 \value{
 list of models for period t=0,1,...,Tt, in that order.
