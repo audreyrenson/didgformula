@@ -1,15 +1,22 @@
-fit_covariate_models <- function(data, rhs_formula, Tt) {
+fit_covariate_models <- function(data, rhs_formula, family, Tt) {
   fit_one_model <- function(t) {
-    return ( glm(formula = as.formula(glue::glue('L{t}', rhs_formula)),
+    return ( glm(formula = as.formula(glue('L{t}', rhs_formula)),
+                 family = family,
                  data = data,
-                 subset = data[[glue::glue('A{t-1}')]] == 0) )
+                 subset = data[[glue('A{t-1}')]] == 0) )
   }
 
   return (sapply(1:Tt, fit_one_model, simplify=FALSE))
 }
 
-fit_outcome_models <- function(data, rhs_formula, family, Tt) {
-  return (sapply(1:Tt, fit_two_outcome_models, data=data, rhs_formula=rhs_formula, family=family, simplify=FALSE))
+fit_outcome_models <- function(data, rhs_formula, family, Tt, binomial_n=NULL) {
+  return (sapply(1:Tt,
+                 fit_two_outcome_models,
+                 data=data,
+                 rhs_formula=rhs_formula,
+                 family=family,
+                 binomial_n=binomial_n,
+                 simplify=FALSE))
 }
 
 get_replicate_data <- function(data, nreps) {
@@ -59,11 +66,11 @@ estimate_or <- function(simulated_data, Tt) {
 #' @export
 #'
 #' @examples
-or_pipeline <- function(data, y_formula, l_formula, y_family='gaussian', Tt, nreps, tibble=TRUE) {
+or_pipeline <- function(data, y_formula, l_formula, y_family='gaussian', l_family='binomial', Tt, nreps, tibble=TRUE) {
 
 
   rep_data = get_replicate_data(data, nreps)
-  cov_models = fit_covariate_models(data, rhs_formula = l_formula, Tt=Tt)
+  cov_models = fit_covariate_models(data, rhs_formula = l_formula, family=l_family, Tt=Tt)
   out_models = fit_outcome_models(data, rhs_formula = y_formula, family=y_family, Tt=Tt)
   rep_data = get_replicate_data(data, nreps = nreps)
   sim_data = simulate_fulldata(rep_data, cov_models, out_models, Tt)
