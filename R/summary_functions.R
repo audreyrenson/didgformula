@@ -32,13 +32,14 @@ combine_estimates <- function(truth, iptw, ice, or, Tt) {
 #' @export
 #'
 #' @examples
-estimate_truth <- function(df_po, Tt, link_fun=NULL) {
+estimate_truth <- function(df_po, Tt, link_fun=NULL, binomial_n=1) {
+  row_freqs = rep(1, nrow(df_po))*binomial_n #return a column of 1's if not aggregate binomial data
 
   if(is.null(link_fun)) {
-    return( tibble::tibble(t=1:Tt, estimate = colMeans(calc_ydiffs(df_po, Tt))) )
+    return( tibble::tibble(t=1:Tt, estimate = colSums(calc_ydiffs(df_po, Tt)) / sum(row_freqs)) )
   } else {
     stopifnot(is.function(link_fun))
-    ymeans = colMeans(df_po[ , sapply(0:Tt, function(t) glue('Y{t}')) ])
+    ymeans = colSums(df_po[ , sapply(0:Tt, function(t) glue('Y{t}')) ]) / sum(row_freqs)
     return( tibble::tibble(t=1:Tt, estimate = diff(link_fun(ymeans)) ) )
   }
 
