@@ -1,7 +1,7 @@
-#' Create formulas from string vectors
+#' Create formulas by expanding out string vector arguments
 #'
-#' @param formula An R formula containing terms referencing objects defined in the parent environment or in ...
-#' @param ... Variables defined in `formula` (see examples)
+#' @param formula An R formula containing terms referencing objects defined in the parent environment or in ... Terms must each consist of a single lowercase or uppercase letter.
+#' @param ... Variables defined in `formula` (see examples).
 #'
 #' @return chr.
 #' @export

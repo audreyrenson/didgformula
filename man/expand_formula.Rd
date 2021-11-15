@@ -2,20 +2,20 @@
 % Please edit documentation in R/expand_formula.R
 \name{expand_formula}
 \alias{expand_formula}
-\title{Create formulas from string vectors}
+\title{Create formulas by expanding out string vector arguments}
 \usage{
 expand_formula(formula, ...)
 }
 \arguments{
-\item{formula}{An R formula containing terms referencing objects defined in the parent environment or in ...}
+\item{formula}{An R formula containing terms referencing objects defined in the parent environment or in ... Terms must each consist of a single lowercase or uppercase letter.}
 
-\item{...}{Variables defined in \code{formula} (see examples)}
+\item{...}{Variables defined in \code{formula} (see examples).}
 }
 \value{
 chr.
 }
 \description{
-Create formulas from string vectors
+Create formulas by expanding out string vector arguments
 }
 \examples{
 expand_formula(~a:b + d, a=c('a1','a2'), b=c('b1','b2'), d='d1')
