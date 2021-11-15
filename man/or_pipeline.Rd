@@ -9,8 +9,10 @@ or_pipeline(
   y_formula,
   l_formula,
   y_family = "gaussian",
+  l_family = "binomial",
   Tt,
   nreps,
+  binomial_n = NULL,
   tibble = TRUE
 )
 }

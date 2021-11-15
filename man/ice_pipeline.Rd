@@ -10,6 +10,7 @@ ice_pipeline(
   outside_formula,
   Tt,
   inside_family = "gaussian",
+  binomial_n = NULL,
   tibble = TRUE
 )
 }
