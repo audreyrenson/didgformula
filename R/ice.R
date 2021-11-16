@@ -1,3 +1,15 @@
+#' Fit outcome models using `glm` at t and t-1 for ICE and outcome regression pipelines
+#'
+#' @param t int.
+#' @param data wide data frame
+#' @param rhs_formula RHS glue-style formula to use for both models
+#' @param family stats::families object or string referring to one
+#' @param binomial_n vector of group sizes of length(nrow(data))
+#'
+#' @return
+#' @export
+#'
+#' @examples
 fit_two_outcome_models <- function(t, data, rhs_formula, family, binomial_n=NULL) {
   #this is for estimating the innermost expectation of ICE, or for the outcome models in monte carlo
   #two at once because we typically want E[Y_t|L_t, A_t] and E[Y_{t-1}|L_t, A_t]
@@ -21,6 +33,18 @@ fit_two_outcome_models <- function(t, data, rhs_formula, family, binomial_n=NULL
   return (models)
 }
 
+#' Fit outer moderls for ICE using `lm`
+#'
+#' @param k int. Timepoint to which the outer expectation, i.e. E(mu_k^t|L_k, A_k), applies.
+#' @param data wide data frame
+#' @param preds vector of length(nrow(data)) of values predicted by the k+1 model.
+#' @param rhs_formula chr. glue-style formula for the right hand side.
+#' @param binomial_n vector of group sizes if Y refers to binomial aggregate data. Used to construct weights.
+#'
+#' @return
+#' @export
+#'
+#' @examples
 fit_outer_exp_model <- function(k, data, preds, rhs_formula, binomial_n=NULL) {
   #t is the timepoint for which we are estimating \hat\E[Y_t(\bar a) - Y_{t-1}(\bar a)]
   #k is the the timepoint the outer expectation applies to
@@ -36,7 +60,22 @@ fit_outer_exp_model <- function(k, data, preds, rhs_formula, binomial_n=NULL) {
   )
 }
 
+#' Recursively apply the ICE algorithm
+#'
+#' @param t int. Timepoint the estimand applies to
+#' @param k int. Always 0 if called at the user level. Timepoint the outer expectation applies to
+#' @param data wide data frame
+#' @param inside_formula chr. glue-style formula for inside models (times indexed by t, e.g. '~L{t}')
+#' @param outside_formula chr. glue-style formula for outside models (times indexed by k, e.g. '~L{k})
+#' @param inside_family stats::families object (or chr) for glm inside models
+#' @param binomial_n vector of length nrow(data) of group sizes if Y is binomial aggregate data
+#'
+#' @return
+#' @export
+#'
+#' @examples
 recursive_ice <- function(t, k, data, inside_formula, outside_formula, inside_family, binomial_n=NULL) {
+
   if(k==t) {
     two_models = fit_two_outcome_models(t=k, data=data, rhs_formula = inside_formula, family=inside_family, binomial_n)
     predictions = sapply(two_models, predict, newdata=data, type='link', simplify=TRUE)
