@@ -1,3 +1,15 @@
+#' Fit outcome models using `glm` at t and t-1 for ICE and outcome regression pipelines
+#'
+#' @param t int.
+#' @param data wide data frame
+#' @param rhs_formula RHS glue-style formula to use for both models
+#' @param family stats::families object or string referring to one
+#' @param binomial_n vector of group sizes of length(nrow(data))
+#'
+#' @return
+#' @export
+#'
+#' @examples
 fit_two_outcome_models <- function(t, data, rhs_formula, family, binomial_n=NULL) {
   #this is for estimating the innermost expectation of ICE, or for the outcome models in monte carlo
   #two at once because we typically want E[Y_t|L_t, A_t] and E[Y_{t-1}|L_t, A_t]
