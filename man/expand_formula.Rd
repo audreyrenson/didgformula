@@ -9,7 +9,7 @@ expand_formula(formula, ...)
 \arguments{
 \item{formula}{An R formula containing terms referencing objects defined in the parent environment or in ... Terms must each consist of a single lowercase or uppercase letter.}
 
-\item{...}{Variables defined in \code{formula} (see examples).}
+\item{...}{Variables referenced in \code{formula}. Can be glue-style, with glue terms also defined in ... (see examples)}
 }
 \value{
 chr.
@@ -25,4 +25,7 @@ a=c('a1','a2')
 b=c('b1','b2')
 d='d1'
 expand_formula(~a:b + d)
+
+#variables can be specified in glue-style
+expand_formula(~a:b, a=c('a{h}', 'a{h+1}'), b='a{h}', h=1)
 }

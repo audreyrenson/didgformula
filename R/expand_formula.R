@@ -1,7 +1,7 @@
 #' Create formulas by expanding out string vector arguments
 #'
 #' @param formula An R formula containing terms referencing objects defined in the parent environment or in ... Terms must each consist of a single lowercase or uppercase letter.
-#' @param ... Variables defined in `formula` (see examples).
+#' @param ... Variables referenced in `formula`. Can be glue-style, with glue terms also defined in ... (see examples)
 #'
 #' @return chr.
 #' @export
@@ -14,6 +14,9 @@
 #' b=c('b1','b2')
 #' d='d1'
 #' expand_formula(~a:b + d)
+#'
+#' #variables can be specified in glue-style
+#' expand_formula(~a:b, a=c('a{h}', 'a{h+1}'), b='a{h}', h=1)
 expand_formula <- function(formula, ...) {
 
   term_maker = function(letter) {
@@ -27,5 +30,6 @@ expand_formula <- function(formula, ...) {
   }
 
   all_terms = attr(terms.formula(formula), 'term.labels')
-  return (paste(stringr::str_replace_all(all_terms, '[a-z]', term_maker), collapse=" + "))
+  formula_string = paste(stringr::str_replace_all(all_terms, '[a-z]', term_maker), collapse=" + ")
+  return ( as.character(glue( formula_string, .envir = ... )) )
 }
