@@ -1,5 +1,8 @@
 #' Get histograms of DID g-formula results
 #'
+#' Red vertical lines represent the true expected value for the random variable of which the displayed quantities should be realizations. If show_bias=TRUE, this is 0, otherwise it is E(Y_t(a)-Y_t-1(a)).
+#' Blue vertical lines represent the estimated expected value based on the realizations.
+#'
 #' @param results_df Data frame with columns 'rep' and 'estimates' where 'estimates' is a list of tibble output results from either iptw_pipeline(), ice_pipeline(), or or_pipeline().
 #' @param estimates_truth Data frame with columns 't' and 'estimate', with the 'true' value of E(Y_t(a)-Y_t-1(a)) for t=1,...,T
 #' @param show_bias Logical. Should the histograms show deviations from 'truth' (TRUE) or the estimates themselves (FALSE)?
@@ -14,9 +17,12 @@ results_histograms = function(results_df, estimates_truth, show_bias=TRUE) {
     unnest(estimates) %>%
     left_join(estimates_truth %>% rename(truth = estimate)) %>%
     mutate(bias = estimate - truth) %>%
+    group_by(t) %>%
+    mutate(mean_bias = mean(bias), mean_estimate = mean(estimate)) %>%
     ggplot(aes(x=if(show_bias) bias else estimate)) +
     geom_histogram() +
     geom_vline(data=estimates_truth, mapping=aes(xintercept= if(show_bias) 0 else estimate), color='red') +
+    geom_vline(aes(xintercept = if(show_bias) mean_bias else mean_estimate), color='blue') +
     facet_wrap(~t, scales='free') +
     labs(x=if(show_bias) 'bias' else 'estimate')
 
