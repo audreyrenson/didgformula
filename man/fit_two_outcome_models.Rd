@@ -4,18 +4,27 @@
 \alias{fit_two_outcome_models}
 \title{Fit outcome models using \code{glm} at t and t-1 for ICE and outcome regression pipelines}
 \usage{
-fit_two_outcome_models(t, data, rhs_formula, family, binomial_n = NULL)
+fit_two_outcome_models(
+  t,
+  data,
+  rhs_formula_t,
+  rhs_formula_tmin1,
+  family,
+  binomial_n = NULL
+)
 }
 \arguments{
 \item{t}{int.}
 
 \item{data}{wide data frame}
 
-\item{rhs_formula}{RHS glue-style formula to use for both models}
+\item{rhs_formula_t}{chr. RHS glue-style formula for Yt model}
 
 \item{family}{stats::families object or string referring to one}
 
 \item{binomial_n}{vector of group sizes of length(nrow(data))}
+
+\item{rhs_formula_tmin}{chr. RHS glue-style formula for Yt-1 model}
 }
 \value{
 

@@ -6,7 +6,8 @@
 \usage{
 or_pipeline(
   data,
-  y_formula,
+  yt_formula,
+  ytmin1_formula,
   l_formula,
   y_family = "gaussian",
   l_family = "binomial",
@@ -19,7 +20,9 @@ or_pipeline(
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.}
 
-\item{y_formula}{chr. right-hand-side formula for outcome models}
+\item{yt_formula}{chr. right-hand-side formula for Yt outcome modles}
+
+\item{ytmin1_formula}{chr. right-hand-side formula for Ytmin1 outcome models}
 
 \item{l_formula}{chr. right hand side formula for covariate models}
 

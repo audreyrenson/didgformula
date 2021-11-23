@@ -13,9 +13,11 @@ fit_outer_exp_model(k, data, preds, rhs_formula, binomial_n = NULL)
 
 \item{preds}{vector of length(nrow(data)) of values predicted by the k+1 model.}
 
-\item{rhs_formula}{chr. glue-style formula for the right hand side.}
-
 \item{binomial_n}{vector of group sizes if Y refers to binomial aggregate data. Used to construct weights.}
+
+\item{rhs_formula_t}{chr. RHS glue-style formula for Yt model}
+
+\item{rhs_formula_tmin}{chr. RHS glue-style formula for Yt-1 model}
 }
 \value{
 

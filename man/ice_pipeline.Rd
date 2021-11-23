@@ -6,7 +6,8 @@
 \usage{
 ice_pipeline(
   data,
-  inside_formula,
+  inside_formula_t,
+  inside_formula_tmin1,
   outside_formula,
   Tt,
   inside_family = "gaussian",
@@ -17,7 +18,9 @@ ice_pipeline(
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.}
 
-\item{inside_formula}{chr, right-hand-side formula for inside models}
+\item{inside_formula_t}{chr, right-hand-side formula for inside model for Yt}
+
+\item{inside_formula_tmin1}{chr, right-hand-side formula for inside model for Yt-1}
 
 \item{outside_formula}{chr, right-hand-side formula for outside models}
 

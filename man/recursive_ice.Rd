@@ -8,7 +8,8 @@ recursive_ice(
   t,
   k,
   data,
-  inside_formula,
+  inside_formula_t,
+  inside_formula_tmin1,
   outside_formula,
   inside_family,
   binomial_n = NULL
@@ -21,7 +22,9 @@ recursive_ice(
 
 \item{data}{wide data frame}
 
-\item{inside_formula}{chr. glue-style formula for inside models (times indexed by t, e.g. '~L{t}')}
+\item{inside_formula_t}{chr. glue-style formula for inside model for Yt (times indexed by t, e.g. '~L{t}')}
+
+\item{inside_formula_tmin1}{chr. glue-style formula for inside model for Yt (times indexed by t, e.g. '~L{t-1}')}
 
 \item{outside_formula}{chr. glue-style formula for outside models (times indexed by k, e.g. '~L{k})}
 
