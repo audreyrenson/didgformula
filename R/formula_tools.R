@@ -10,8 +10,8 @@
 #'
 #' @examples
 #'
-#' glue_formula('~L{t}+L{t-1}+L{t-2}', t=2)
-#' glue_formula('~L{t}+L{t-1}+L{t-2}', t=1)
+#' glue_formula('~L{t}*L{t-1}+L{t-2}', t=2)
+#' glue_formula('~L{t}*L{t-1}+L{t-2}', t=1)
 #'
 glue_formula = function(string, ...) {
 
