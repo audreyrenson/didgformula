@@ -21,10 +21,10 @@ glue_formula = function(string, ...) {
   remove_negatives = function(glued_string) {
     #this is to get rid of references to variables before time 0
     glued_string %>%
-      str_remove('\\+[:alpha:]+-[:digit:]+') %>%#first remove those starting with +
-      str_remove('\\*[:alpha:]+-[:digit:]+') %>%#or a *
-      str_remove('\\:[:alpha:]+-[:digit:]+') %>%#etc.
-      str_remove('[:alpha:]+-[:digit:]+')
+      str_remove_all('\\+[:alpha:]+-[:digit:]+') %>%#first remove those starting with +
+      str_remove_all('\\*[:alpha:]+-[:digit:]+') %>%#or a *
+      str_remove_all('\\:[:alpha:]+-[:digit:]+') %>%#etc.
+      str_remove_all('[:alpha:]+-[:digit:]+')
   }
 
   positive_glued_trimmed_string = remove_negatives(glued_trimmed_string)
