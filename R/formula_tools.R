@@ -1,3 +1,41 @@
+#' Create formulas using `glue` syntax
+#'
+#' This function is specifically designed for dynamically evaluating formulas with time indices. As such, it will delete any formula elements referring to times less than 0.
+#'
+#' @param string chr. Expressions enclosed in braces will be evaluated as R code (see `?glue`).
+#' @param ... additional arguments. Here you can pass variables to be evaluated in enclosed expressions in `string`.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#'
+#' glue_formula('~L{t}+L{t-1}+L{t-2}', t=2)
+#' glue_formula('~L{t}+L{t-1}+L{t-2}', t=1)
+#'
+glue_formula = function(string, ...) {
+
+  trimmed_string = str_remove_all(string, '[:space:]')
+  glued_trimmed_string = glue(string, .envir = list(...))
+
+  remove_negatives = function(glued_string) {
+    #this is to get rid of references to variables before time 0
+    glued_string %>%
+      str_remove('\\+[:alpha:]+-[:digit:]+') %>%#first remove those starting with +
+      str_remove('\\*[:alpha:]+-[:digit:]+') %>%#or a *
+      str_remove('\\:[:alpha:]+-[:digit:]+') %>%#etc.
+      str_remove('[:alpha:]+-[:digit:]+')
+  }
+
+  positive_glued_trimmed_string = remove_negatives(glued_trimmed_string)
+
+  return(as.formula(positive_glued_trimmed_string))
+}
+
+
+
+
+
 #' Create formulas by expanding out string vector arguments
 #'
 #' @param formula An R formula containing terms referencing objects defined in the parent environment or in ... Terms must each consist of a single lowercase or uppercase letter.
