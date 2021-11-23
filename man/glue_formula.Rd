@@ -19,12 +19,7 @@ This function is specifically designed for dynamically evaluating formulas with 
 }
 \examples{
 
-<<<<<<< HEAD
 glue_formula('~L{t}*L{t-1}+L{t-2}', t=2)
 glue_formula('~L{t}*L{t-1}+L{t-2}', t=1)
-=======
-glue_formula('~L{t}+L{t-1}+L{t-2}', t=2)
-glue_formula('~L{t}+L{t-1}+L{t-2}', t=1)
->>>>>>> 69b91f462779b7dc191d55589db9f217c69a68f1
 
 }
