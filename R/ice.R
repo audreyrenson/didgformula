@@ -18,18 +18,19 @@ fit_two_outcome_models <- function(t, data, rhs_formula_t, rhs_formula_tmin1, fa
   models = list()
 
   if(is.null(binomial_n)) { #y is not aggregate binomial
-    formulas =     c(glue('Y{t-1}', rhs_formula_t),
-                     glue('Y{t}', rhs_formula_tmin1))
+    formulas =     c(glue_formula(paste0('Y{t-1}', rhs_formula_tmin1), t=t),
+                     glue_formula(paste('Y{t}',rhs_formula_t ), t=t))
   } else {#y is aggregate binomial
-    formulas =     c(glue('cbind(Y{t-1}, binomial_n - Y{t-1})', rhs_formula_t),
-                     glue('cbind(Y{t}, binomial_n - Y{t})', rhs_formula_tmin1))
+    formulas =     c(glue_formula(paste0('cbind(Y{t-1}, binomial_n - Y{t-1})', rhs_formula_tmin1), t=t),
+                     glue_formula(paste('cbind(Y{t}, binomial_n - Y{t})',rhs_formula_t ), t=t))
     data$binomial_n = binomial_n #and we don't want any ambiguity in case the 'data' already has a column 'binomial_n' (!!)
   }
 
-  models = lapply(1:2, function(s) glm(formula = as.formula(formulas[s]),
+  subst = data[[glue('A{t}')]] == 0
+
+  models = lapply(1:2, function(s) glm(formula = as.formula(formulas[[s]]),
                                        family,
-                                       data=data,
-                                       subset=data[[glue::glue('A{t}')]] == 0))
+                                       data=data[subst, ]))
 
   return (models)
 }
@@ -52,12 +53,19 @@ fit_outer_exp_model <- function(k, data, preds, rhs_formula, binomial_n=NULL) {
   #k is the the timepoint the outer expectation applies to
   #preds are the k+1th outer expectation
 
-  lm_weights = if(is.null(binomial_n)) rep(1, nrow(data)) else  binomial_n / sum(binomial_n) #these are 1's unless binomial aggregate data
+  if(is.null(binomial_n)) {
+    data$lm_weights = 1 #these are 1's unless binomial aggregate data
+  } else {
+    data$lm_weights = binomial_n / sum(binomial_n)
+  }
+
+  data$preds = preds
+
+  subst = data[[glue('A{k}')]] == 0
 
   return (
-    lm( formula = as.formula(glue::glue('preds', rhs_formula)),
-        data=data,
-        subset=data[[glue::glue('A{k}')]] == 0,
+    lm( formula = glue_formula(paste0('preds', rhs_formula), k=k),
+        data=data[subst, ],
         weights = lm_weights)
   )
 }
@@ -151,3 +159,4 @@ ice_pipeline <- function(data,
   }
 
 }
+
