@@ -41,8 +41,8 @@ simulate_Lt <- function(replicate_data, cov_model) {
 }
 
 simulate_Ydifft <- function(replicate_data,
-                            outcome_models, #list of 2 glm objects, for t-1 and t
-                            t) {
+                            outcome_models #list of 2 glm objects, for t-1 and t
+                            ) {
   outcome_preds = sapply(outcome_models, predict, newdata=replicate_data, type="link", simplify = TRUE)
   return ( outcome_preds[,2] - outcome_preds[,1] )
 }
@@ -53,7 +53,7 @@ simulate_fulldata <- function(replicate_data,
                               Tt) {
   for (t in 1:Tt) {
     replicate_data[[glue('L{t}')]] = simulate_Lt(replicate_data, cov_models[[t]])
-    replicate_data[[glue('Ydiff{t}')]] = simulate_Ydifft(replicate_data, outcome_models[[t]], t)
+    replicate_data[[glue('Ydiff{t}')]] = simulate_Ydifft(replicate_data, outcome_models[[t]])
   }
 
   return ( replicate_data )
