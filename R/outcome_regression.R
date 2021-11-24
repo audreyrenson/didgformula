@@ -36,10 +36,8 @@ get_replicate_data <- function(data, nreps, binomial_n=NULL) {
 
 }
 
-simulate_Lt <- function(replicate_data, cov_model, t) {
-
-  cov_preds = predict(cov_model, newdata=replicate_data, type='response')
-  return ( rbinom(n=nrow(replicate_data), size=1, prob = cov_preds) )
+simulate_Lt <- function(replicate_data, cov_model) {
+  sim(model = cov_model, newdata=replicate_data)
 }
 
 simulate_Ydifft <- function(replicate_data,
@@ -54,7 +52,7 @@ simulate_fulldata <- function(replicate_data,
                               outcome_models, #list of Tt lists of 2 glm objects, each for t-1 and t, t=1,2,...,Tt
                               Tt) {
   for (t in 1:Tt) {
-    replicate_data[[glue('L{t}')]] = simulate_Lt(replicate_data, cov_models[[t]], t)
+    replicate_data[[glue('L{t}')]] = simulate_Lt(replicate_data, cov_models[[t]])
     replicate_data[[glue('Ydiff{t}')]] = simulate_Ydifft(replicate_data, outcome_models[[t]], t)
   }
 
@@ -77,6 +75,8 @@ estimate_or <- function(simulated_data, Tt, binomial_n=NULL) {
 #' @param yt_formula chr. right-hand-side formula for Yt outcome modles
 #' @param ytmin1_formula chr. right-hand-side formula for Ytmin1 outcome models
 #' @param l_formula chr. right hand side formula for covariate models
+#' @param y_family `stats::family` object for the outcome regression models (which are fit using `glm`)
+#' @param l_family `stats::family` object for the covariate models (which are fit using `glm`)
 #' @param Tt int. Max periods
 #' @param nreps int. Number of reps for monte-carlo simulation
 #' @param tibble logical. Return results as tibble (TRUE) or vector (FALSE)?
@@ -86,8 +86,9 @@ estimate_or <- function(simulated_data, Tt, binomial_n=NULL) {
 #'
 #' @examples
 or_pipeline <- function(data, yt_formula, ytmin1_formula,
-                        l_formula, y_family='gaussian',
-                        l_family='binomial', Tt, nreps,
+                        l_formula,
+                        y_family=gaussian,
+                        l_family=binomial, Tt, nreps,
                         binomial_n=NULL, tibble=TRUE) {
 
   cov_models = fit_covariate_models(data,
