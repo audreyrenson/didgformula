@@ -24,7 +24,11 @@ sim <- function(model, newdata, binomial_n=1) {
   dispersion = summary(model)$dispersion
   simfun = get_simfun(family(model))
 
+<<<<<<< HEAD
   simfun(eta, dispersion, n)
+=======
+  simfun(N, n, eta, dispersion)
+>>>>>>> e00ad00eb0a44165b47c4752db8d0f38f4b0932b
 
 }
 
