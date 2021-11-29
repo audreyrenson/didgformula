@@ -11,6 +11,8 @@ The R package `didgformula` implements inverse-probability weighted,
 iterated conditional, and outcome regression estimators for the
 difference-in-differences g-formula.
 
+The difference-in-differences (DID) g-formula extends conventional DID methods, which target average treatment effects in the treated (ATTs), to more general causal effects defined as average counterfactual outcomes under a (possibly time-varying) exposure regime. DID g-formula also extends conventional g-formula methods, which base identification on an assumption called *exchangeability*, which requires that a sufficient set of covariates to control confounding is measured. Instead, DID g-formula relies on an assumption called *parallel trends*, standard in DID approaches, which requires that under the specified treatment regime, condition on covariates, counterfactual outcome *trends* would have been parallel (on an appropriate scale) regardless of actual treatment received. 
+
 ## Installation
 
 Only the development version is available so far. You can install it
