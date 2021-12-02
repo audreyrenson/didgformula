@@ -127,8 +127,8 @@ pt_deviation_histograms(df_survival_po, Tt=time_periods, k=5, link_fun = qlogis)
 Estimation proceeds similarly as with continuous outcomes (see introduction vignette). Only ICE and outcome regression have been derived under generalized parallel trends. Note that the returned values are estimates of $g(E[Y_t(\bar a)]) - g(E[Y_{t-1}(\bar a)])$, by virtue of specifying `inside_family = 'binomial'`. This is because the logit function is the default link for `stats::binomial()`.
 
 ```{r}
-estimates_ice   = ice_pipeline(df_survival, inside_formula = '~L{t}', outside_formula = '~L{k}', inside_family = 'binomial', Tt=time_periods)
-estimates_or    = or_pipeline(df_survival, y_formula = '~L{t}', l_formula = '~1', y_family = 'binomial', Tt=time_periods, nreps=N_obs)
+estimates_ice   = ice_pipeline(df_survival, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t}', outside_formula = '~L{k}', inside_family = 'binomial', Tt=time_periods)
+estimates_or    = or_pipeline(df_survival, yt_formula = '~L{t}', ytmin1_formula = '~L{t-1}', l_formula = '~1', y_family = 'binomial', Tt=time_periods, nreps=N_obs)
 estimates_truth = estimate_truth(df_survival_po, Tt=time_periods, link_fun=qlogis)
 
 combine_estimates(truth=estimates_truth, ice=estimates_ice, or=estimates_or, Tt=time_periods)
