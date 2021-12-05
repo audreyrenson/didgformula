@@ -11,6 +11,7 @@ ice_pipeline(
   outside_formula,
   Tt,
   inside_family = "gaussian",
+  pt_link_fun = NULL,
   binomial_n = NULL,
   tibble = TRUE
 )
@@ -25,6 +26,12 @@ ice_pipeline(
 \item{outside_formula}{chr, right-hand-side formula for outside models}
 
 \item{Tt}{int. max periods}
+
+\item{inside_family}{stats::family object or string referring to one, as in \code{glm}.}
+
+\item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
+
+\item{binomial_n}{int length nrow(data). Group sizes for binomial aggregate data.}
 
 \item{tibble}{logical. return results as a tibble (TRUE) or vector (FALSE)?}
 }
