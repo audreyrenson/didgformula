@@ -9,10 +9,11 @@ or_pipeline(
   yt_formula,
   ytmin1_formula,
   l_formula,
-  y_family = "gaussian",
-  l_family = "binomial",
+  y_family = gaussian,
+  l_family = binomial,
   Tt,
   nreps,
+  pt_link_fun = NULL,
   binomial_n = NULL,
   tibble = TRUE
 )
@@ -26,9 +27,15 @@ or_pipeline(
 
 \item{l_formula}{chr. right hand side formula for covariate models}
 
+\item{y_family}{\code{stats::family} object for the outcome regression models (which are fit using \code{glm})}
+
+\item{l_family}{\code{stats::family} object for the covariate models (which are fit using \code{glm})}
+
 \item{Tt}{int. Max periods}
 
 \item{nreps}{int. Number of reps for monte-carlo simulation}
+
+\item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
 
 \item{tibble}{logical. Return results as tibble (TRUE) or vector (FALSE)?}
 }
