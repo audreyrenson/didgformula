@@ -94,8 +94,8 @@ recursive_ice <- function(t, k, data, inside_formula_t, inside_formula_tmin1,
                                         rhs_formula_tmin1 = inside_formula_tmin1,
                                         family=inside_family,
                                         binomial_n)
-    predictions = sapply(two_models, predict, newdata=data, type='link', simplify=TRUE)
-    return (  predictions[,2] - predictions[,1] )
+    predictions = sapply(two_models, predict, newdata=data, type='response', simplify=TRUE)
+    return (  predictions )
   } else {
     preds = recursive_ice(t,
                           k+1,
@@ -105,17 +105,27 @@ recursive_ice <- function(t, k, data, inside_formula_t, inside_formula_tmin1,
                           outside_formula,
                           inside_family,
                           binomial_n)
-    one_model = fit_outer_exp_model(k, data=data, preds=preds, rhs_formula=outside_formula, binomial_n)
-    return (predict(one_model, newdata=data))
+
+    two_models = lapply(1:2, function(h)  fit_outer_exp_model(k, data, preds[,h], outside_formula, binomial_n))
+    predictions = sapply(two_models, predict, newdata=data, simplify=TRUE)
+    return ( predictions )
   }
 }
 
-estimate_ice <- function(ice_diffs, data, binomial_n = NULL) {
+estimate_ice <- function(ice_preds,  # Nx2 matrix
+                         link_fun,
+                         binomial_n = NULL) {
 
-  if(is.null(binomial_n)) binomial_n = rep(1, nrow(data))
+  if(is.null(link_fun)) {
+    link_fun = function(x) x
+  } else {
+    stopifnot(is.function(link_fun))
+  }
+
+  if(is.null(binomial_n)) binomial_n = rep(1, nrow(ice_preds))
   freq_w = binomial_n / sum(binomial_n)
 
-  return ( colSums(ice_diffs * freq_w) )
+  return ( diff(link_fun(colSums(ice_preds * freq_w) )) )
 }
 
 #' Iterated conditional DID g-formula estimator
@@ -125,6 +135,9 @@ estimate_ice <- function(ice_diffs, data, binomial_n = NULL) {
 #' @param inside_formula_tmin1 chr, right-hand-side formula for inside model for Yt-1
 #' @param outside_formula chr, right-hand-side formula for outside models
 #' @param Tt int. max periods
+#' @param inside_family stats::family object or string referring to one, as in `glm`.
+#' @param binomial_n int length nrow(data). Group sizes for binomial aggregate data.
+#' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.
 #' @param tibble logical. return results as a tibble (TRUE) or vector (FALSE)?
 #'
 #' @return
@@ -137,19 +150,18 @@ ice_pipeline <- function(data,
                          outside_formula,
                          Tt,
                          inside_family='gaussian',
-                         binomial_n=NULL, tibble=TRUE) {
+                         pt_link_fun=NULL,
+                         binomial_n=NULL,
+                         tibble=TRUE) {
+  ice_preds = lapply(1:Tt, function(t) recursive_ice(t, k=0,
+                                                     data=data,
+                                                     inside_formula_t=inside_formula_t,
+                                                     inside_formula_tmin1=inside_formula_tmin1,
+                                                     outside_formula=outside_formula,
+                                                     inside_family=inside_family,
+                                                     binomial_n=binomial_n))
 
-  ice_diffs <- sapply(1:Tt,
-                      recursive_ice,
-                      k=0,
-                      data=data,
-                      inside_formula_t=inside_formula_t,
-                      inside_formula_tmin1=inside_formula_tmin1,
-                      outside_formula=outside_formula,
-                      inside_family=inside_family,
-                      binomial_n=binomial_n)
-
-  ice_estimates <- estimate_ice(ice_diffs, data=data, binomial_n)
+  ice_estimates = sapply(ice_preds, estimate_ice, link_fun=pt_link_fun, binomial_n)
 
   if(!tibble) {
     return (ice_estimates)
@@ -159,4 +171,5 @@ ice_pipeline <- function(data,
   }
 
 }
+
 
