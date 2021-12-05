@@ -63,11 +63,24 @@ calc_inclusion_indicators <- function(data, Tt) {
   sapply(1:Tt, function(t) 1 * (data[[glue::glue('A{t}')]] == 0), simplify = TRUE)
 }
 
-estimate_iptw <- function(ydiffs, weights, inclusion_indicators, binomial_n = 1) {
-  binomial_n = rep(1, nrow(ydiffs)) * binomial_n #get a column of 1's if this is not binomial aggregate data
+estimate_iptw <- function(data, Tt, weights, inclusion_indicators, link_fun=NULL, binomial_n = 1) {
+
+  if(!length(binomial_n) %in% c(1, nrow(data))) stop('binomial_n must be lenth 1 or nrow(data)')
+  binomial_n = rep(1, nrow(data)) * binomial_n #get a column of 1's if this is not binomial aggregate data
+
+  if(is.null(link_fun)) {
+    link_fun = function(x) x
+  } else {
+    stopifnot(is.function(link_fun))
+  }
+
+  yt = data %>% dplyr::select(Y1:glue::glue('Y{Tt}')) %>% as.matrix()
+  ytmin1 = data %>% dplyr::select(Y0:glue::glue('Y{Tt-1}')) %>% as.matrix()
+  gEyt = link_fun(colSums(inclusion_indicators * yt * weights) / nrow(data))
+  gEytmin1 = link_fun(colSums(inclusion_indicators * ytmin1 * weights) / nrow(data))
 
   #returns a Tx1 vector of \hat\E[Y_t(\bar a) - Y_{t-1}(\bar a)], t=1,2,...,T
-  return (colSums(inclusion_indicators * ydiffs * weights) / sum(binomial_n))
+  return (gEyt - gEytmin1)
 }
 
 #' Estimate the DID g-formula using inverse-probability-of-treatment-weights.
@@ -76,13 +89,14 @@ estimate_iptw <- function(ydiffs, weights, inclusion_indicators, binomial_n = 1)
 #' @param rhs_formula chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.
 #' @param Tt int. Final period in dataset (t=0,1,...,Tt)
 #' @param tibble logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?
+#' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.
 #' @param binomial_n int length nrow(data). Group sizes for aggregate binomial data.
 #'
 #' @return Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).
 #' @export
 #'
 #' @examples
-iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE, binomial_n=1) {
+iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE, pt_link_fun=NULL, binomial_n=1) {
 
   if(!length(binomial_n) %in% c(1, nrow(data))) stop('binomial_n must be lenth 1 or nrow(data)')
   binomial_n = binomial_n * rep(1, nrow(data)) # get a column of 1's if not aggregate binomial data
@@ -90,9 +104,11 @@ iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE, binomial_n=1) {
   den_mods = fit_treatment_models(data, rhs_formula, Tt, weights = binomial_n / sum(binomial_n))
   den_preds = pred_treatment_models(data, den_mods)
   weights = calc_weights(den_preds)
-  estimates = estimate_iptw(ydiffs = calc_ydiffs(data, Tt),
+  estimates = estimate_iptw(data=data,
+                            Tt=Tt,
                             weights = weights,
                             inclusion = calc_inclusion_indicators(data, Tt),
+                            link_fun = pt_link_fun,
                             binomial_n = binomial_n)
   if(!tibble) {
     return (estimates)
@@ -101,7 +117,6 @@ iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE, binomial_n=1) {
                             estimate = estimates) )
   }
 }
-
 
 
 

@@ -4,7 +4,14 @@
 \alias{iptw_pipeline}
 \title{Estimate the DID g-formula using inverse-probability-of-treatment-weights.}
 \usage{
-iptw_pipeline(data, rhs_formula, Tt, tibble = TRUE, binomial_n = 1)
+iptw_pipeline(
+  data,
+  rhs_formula,
+  Tt,
+  tibble = TRUE,
+  pt_link_fun = NULL,
+  binomial_n = 1
+)
 }
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.}
@@ -14,6 +21,8 @@ iptw_pipeline(data, rhs_formula, Tt, tibble = TRUE, binomial_n = 1)
 \item{Tt}{int. Final period in dataset (t=0,1,...,Tt)}
 
 \item{tibble}{logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?}
+
+\item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
 
 \item{binomial_n}{int length nrow(data). Group sizes for aggregate binomial data.}
 }
