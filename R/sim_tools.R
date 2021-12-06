@@ -49,7 +49,7 @@ get_simfun <- function(family) {
     switch ( family$family,
              'binomial' = rbinom(length(mu), n, mu),
              'gaussian' = rnorm(length(mu), mu, sqrt(dispersion)),
-             'Gamma' = rgamma(length(mu), shape = 1/dispersion, scale = dispersion/mu),
+             'Gamma' = rgamma(length(mu), shape = 1/dispersion, scale = dispersion*mu),
              'poisson' = rpois(length(mu), lambda = mu) )
   }
 
