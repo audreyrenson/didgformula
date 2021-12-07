@@ -50,7 +50,8 @@ get_simfun <- function(family) {
              'binomial' = rbinom(length(mu), n, mu),
              'gaussian' = rnorm(length(mu), mu, sqrt(dispersion)),
              'Gamma' = rgamma(length(mu), shape = 1/dispersion, scale = dispersion*mu),
-             'poisson' = rpois(length(mu), lambda = mu) )
+             'poisson' = rpois(length(mu), lambda = mu),
+             'inverse.gaussian' = SuppDists::rinvGauss(length(mu), nu=mu, lambda = 1/dispersion))
   }
 
 }

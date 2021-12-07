@@ -33,5 +33,6 @@ Imports:
     ggplot2,
     magrittr,
     purrr,
-    stringr
+    stringr,
+    SuppDists
 VignetteBuilder: knitr
