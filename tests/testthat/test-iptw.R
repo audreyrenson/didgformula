@@ -1,9 +1,10 @@
-test_that("iptw pipeline returns results", {
+test_that("iptw pipeline returns previous results", {
+  set.seed(5)
   Tt=5
   N=1e3
-  df <- generate_data(N=N, Tt=Tt, Beta = generate_parameters(Tt=Tt))
+  Beta = generate_parameters(Tt=Tt)
+  df <- generate_data(N=N, Tt=Tt, Beta = Beta)
 
   iptw_result = iptw_pipeline(df, '~L{t}', Tt=5)
-
-  expect_false( any(is.na(iptw_result)) )
+  expect_snapshot_value(iptw_result, style='serialize')
 })
