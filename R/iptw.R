@@ -9,17 +9,19 @@
 #' @export
 #'
 #' @examples
-fit_treatment_models <- function(data, rhs_formula, Tt, ...) {
+fit_treatment_models <- function(data, rhs_formula, Tt, freq_w) {
   #returns a list of models
 
+  fit_one_model <- function(t, data, rhs_formula, freq_w) {
+    data$freq_w = freq_w #to avoid glm() being confused about its calling environment and allow us to manually subset the data (since 'subset' argument runs into problems)
 
-  fit_one_model <- function(t) {
     withCallingHandlers({
-      glm(formula = as.formula(glue::glue('A{t}', rhs_formula)),
+
+      glm(formula = glue_formula(paste0('A{t}', rhs_formula), t=t),
           family=binomial,
-          data=data,
-          subset=data[[glue::glue('A{t-1}')]] == 0,
-          ...)
+          data=data[data[[glue("A{t-1}")]]==0, ],
+          weights=freq_w)
+
     }, warning = function(w) {
       #the non-integer successes warning happens anytime you weight a binomial or other discrete glm, and isn't actually a problem
       if (startsWith(conditionMessage(w), "non-integer #successes"))
@@ -27,7 +29,7 @@ fit_treatment_models <- function(data, rhs_formula, Tt, ...) {
     })
   }
 
-  return (lapply(1:Tt, fit_one_model))
+  return (lapply(1:Tt, fit_one_model, data, rhs_formula, freq_w))
 
 }
 
@@ -101,7 +103,7 @@ iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE, pt_link_fun=NULL, 
   if(!length(binomial_n) %in% c(1, nrow(data))) stop('binomial_n must be lenth 1 or nrow(data)')
   binomial_n = binomial_n * rep(1, nrow(data)) # get a column of 1's if not aggregate binomial data
 
-  den_mods = fit_treatment_models(data, rhs_formula, Tt, weights = binomial_n / sum(binomial_n))
+  den_mods = fit_treatment_models(data, rhs_formula, Tt, freq_w = binomial_n / sum(binomial_n))
   den_preds = pred_treatment_models(data, den_mods)
   weights = calc_weights(den_preds)
   estimates = estimate_iptw(data=data,
