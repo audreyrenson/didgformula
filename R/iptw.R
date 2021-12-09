@@ -98,14 +98,21 @@ estimate_iptw <- function(data, Tt, weights, inclusion_indicators, link_fun=NULL
 #' @export
 #'
 #' @examples
-iptw_pipeline <- function(data, rhs_formula, Tt, tibble=TRUE, pt_link_fun=NULL, binomial_n=1) {
+iptw_pipeline <- function(data, Tt, den_formula, num_formula=NULL, tibble=TRUE, pt_link_fun=NULL, binomial_n=1) {
 
   if(!length(binomial_n) %in% c(1, nrow(data))) stop('binomial_n must be lenth 1 or nrow(data)')
   binomial_n = binomial_n * rep(1, nrow(data)) # get a column of 1's if not aggregate binomial data
 
-  den_mods = fit_treatment_models(data, rhs_formula, Tt, freq_w = binomial_n / sum(binomial_n))
+  den_mods = fit_treatment_models(data, den_formula, Tt, freq_w = binomial_n / sum(binomial_n))
   den_preds = pred_treatment_models(data, den_mods)
-  weights = calc_weights(den_preds)
+  if(!is.null(num_formula)) {
+    num_mods = fit_treatment_models(data, num_formula, Tt, freq_w = binomial_n / sum(binomial_n))
+    num_preds = pred_treatment_models(data, num_mods)
+    weights = calc_weights(denominator = den_preds, numerator = num_preds)
+  } else {
+    weights = calc_weights(denominator = den_preds, numerator = 1)
+  }
+
   estimates = estimate_iptw(data=data,
                             Tt=Tt,
                             weights = weights,

@@ -11,7 +11,7 @@ test_that("bootstrap_se returns results", {
     data = df,
     nboots = 3,
     estimator = iptw_pipeline,
-    rhs_formula = '~L{t}',
+    den_formula = '~L{t}',
     Tt = Tt
   )
   boot_ice = bootstrap_se(
