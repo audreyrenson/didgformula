@@ -78,8 +78,8 @@ estimate_iptw <- function(data, Tt, weights, inclusion_indicators, link_fun=NULL
 
   yt = data %>% dplyr::select(Y1:glue::glue('Y{Tt}')) %>% as.matrix()
   ytmin1 = data %>% dplyr::select(Y0:glue::glue('Y{Tt-1}')) %>% as.matrix()
-  gEyt = link_fun(colSums(inclusion_indicators * yt * weights) / nrow(data))
-  gEytmin1 = link_fun(colSums(inclusion_indicators * ytmin1 * weights) / nrow(data))
+  gEyt = link_fun(colSums(inclusion_indicators * yt * weights) / colSums(inclusion_indicators * weights))
+  gEytmin1 = link_fun(colSums(inclusion_indicators * ytmin1 * weights) /colSums(inclusion_indicators * weights))
 
   #returns a Tx1 vector of \hat\E[Y_t(\bar a) - Y_{t-1}(\bar a)], t=1,2,...,T
   return (gEyt - gEytmin1)
@@ -114,6 +114,7 @@ iptw_pipeline <- function(data, Tt, den_formula, num_formula=NULL, tibble=TRUE, 
   }
 
   estimates = estimate_iptw(data=data,
+
                             Tt=Tt,
                             weights = weights,
                             inclusion = calc_inclusion_indicators(data, Tt),

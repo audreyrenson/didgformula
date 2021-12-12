@@ -6,8 +6,9 @@
 \usage{
 iptw_pipeline(
   data,
-  rhs_formula,
   Tt,
+  den_formula,
+  num_formula = NULL,
   tibble = TRUE,
   pt_link_fun = NULL,
   binomial_n = 1
@@ -16,8 +17,6 @@ iptw_pipeline(
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.}
 
-\item{rhs_formula}{chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.}
-
 \item{Tt}{int. Final period in dataset (t=0,1,...,Tt)}
 
 \item{tibble}{logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?}
@@ -25,6 +24,8 @@ iptw_pipeline(
 \item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
 
 \item{binomial_n}{int length nrow(data). Group sizes for aggregate binomial data.}
+
+\item{rhs_formula}{chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.}
 }
 \value{
 Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).
