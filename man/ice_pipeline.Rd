@@ -13,7 +13,8 @@ ice_pipeline(
   inside_family = "gaussian",
   pt_link_fun = NULL,
   binomial_n = NULL,
-  tibble = TRUE
+  tibble = TRUE,
+  models = TRUE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ ice_pipeline(
 \item{binomial_n}{int length nrow(data). Group sizes for binomial aggregate data.}
 
 \item{tibble}{logical. return results as a tibble (TRUE) or vector (FALSE)?}
+
+\item{models}{logical. Return all models as an attribute?}
 }
 \value{
 

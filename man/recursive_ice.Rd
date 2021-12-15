@@ -12,7 +12,8 @@ recursive_ice(
   inside_formula_tmin1,
   outside_formula,
   inside_family,
-  binomial_n = NULL
+  binomial_n = NULL,
+  models = TRUE
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ recursive_ice(
 \item{inside_family}{stats::families object (or chr) for glm inside models}
 
 \item{binomial_n}{vector of length nrow(data) of group sizes if Y is binomial aggregate data}
+
+\item{models}{lgl. Return all models as an attribute?}
 }
 \value{
 
