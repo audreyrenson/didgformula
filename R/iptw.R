@@ -93,12 +93,13 @@ estimate_iptw <- function(data, Tt, weights, inclusion_indicators, link_fun=NULL
 #' @param tibble logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?
 #' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.
 #' @param binomial_n int length nrow(data). Group sizes for aggregate binomial data.
+#' @param models logical. Return all models as an attribute?
 #'
 #' @return Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).
 #' @export
 #'
 #' @examples
-iptw_pipeline <- function(data, Tt, den_formula, num_formula=NULL, tibble=TRUE, pt_link_fun=NULL, binomial_n=1) {
+iptw_pipeline <- function(data, Tt, den_formula, num_formula=NULL, tibble=TRUE, pt_link_fun=NULL, binomial_n=1, models=TRUE) {
 
   if(!length(binomial_n) %in% c(1, nrow(data))) stop('binomial_n must be lenth 1 or nrow(data)')
   binomial_n = binomial_n * rep(1, nrow(data)) # get a column of 1's if not aggregate binomial data
@@ -110,22 +111,29 @@ iptw_pipeline <- function(data, Tt, den_formula, num_formula=NULL, tibble=TRUE, 
     num_preds = pred_treatment_models(data, num_mods)
     weights = calc_weights(denominator = den_preds, numerator = num_preds)
   } else {
+    num_mods = NULL
+    num_preds = 1
     weights = calc_weights(denominator = den_preds, numerator = 1)
   }
 
-  estimates = estimate_iptw(data=data,
+  inclusion_indicators = calc_inclusion_indicators(data, Tt)
 
+  estimates = estimate_iptw(data=data,
                             Tt=Tt,
                             weights = weights,
-                            inclusion = calc_inclusion_indicators(data, Tt),
+                            inclusion =inclusion_indicators,
                             link_fun = pt_link_fun,
                             binomial_n = binomial_n)
   if(!tibble) {
-    return (estimates)
+    result = estimates
   } else {
-    return ( tibble::tibble(t = 1:length(estimates),
-                            estimate = estimates) )
+    result = tibble::tibble(t = 1:length(estimates),
+                            estimate = estimates)
   }
+
+  if(models) attr(result, 'models') = list(den=den_mods, num=num_mods)
+
+  return(result)
 }
 
 

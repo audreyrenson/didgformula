@@ -4,7 +4,7 @@
 \alias{fit_treatment_models}
 \title{Fit treatment models for IPTW}
 \usage{
-fit_treatment_models(data, rhs_formula, Tt, ...)
+fit_treatment_models(data, rhs_formula, Tt, freq_w)
 }
 \arguments{
 \item{data}{Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.}

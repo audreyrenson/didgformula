@@ -10,7 +10,8 @@ generate_data(
   Beta,
   potential_outcomes = FALSE,
   ylink = "rnorm_identity",
-  binomial_n = 1
+  binomial_n = 1,
+  long = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ generate_data(
 \item{ylink}{chr. One of "rnorm_identity", "rbinom_logit", or "rbinom_logit_hazard".}
 
 \item{binomial_n}{int length N. Defaults to all 1's. If ylink is rbinom_logit, you can optionally pass a vector of group sizes to generate aggregate binomial data. In this case, treatments and covariates will be constant at the group level for a given time period.}
+
+\item{long}{lgl. Should the returned dataset be wide (one row per participant, FALSE), or long (Tt+1 rows per participant, TRUE) ?}
 }
 \value{
 Data frame with N rows and (Tt+1)*3 + 2 columns - 'uid' is a unique identifier, 'U0' is an 'unmeasured' baseline covariate, L{t},A{t},Y{t} are covariates, exposures, and outcomes, respectively. If binomial_n != 1, an additional column binomial_n is also included.

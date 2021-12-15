@@ -11,7 +11,8 @@ iptw_pipeline(
   num_formula = NULL,
   tibble = TRUE,
   pt_link_fun = NULL,
-  binomial_n = 1
+  binomial_n = 1,
+  models = TRUE
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ iptw_pipeline(
 \item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
 
 \item{binomial_n}{int length nrow(data). Group sizes for aggregate binomial data.}
+
+\item{models}{logical. Return all models as an attribute?}
 
 \item{rhs_formula}{chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.}
 }

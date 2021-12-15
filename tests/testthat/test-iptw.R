@@ -5,6 +5,6 @@ test_that("iptw pipeline returns previous results", {
   Beta = generate_parameters(Tt=Tt)
   df <- generate_data(N=N, Tt=Tt, Beta = Beta)
 
-  iptw_result = iptw_pipeline(df, Tt=5, den_formula='~L{t}', num_formula='~1')
+  iptw_result = iptw_pipeline(df, Tt=5, den_formula='~L{t}', num_formula='~1', models=FALSE)
   expect_snapshot_value(iptw_result, style='serialize')
 })
