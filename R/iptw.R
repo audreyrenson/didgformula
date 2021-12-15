@@ -88,7 +88,8 @@ estimate_iptw <- function(data, Tt, weights, inclusion_indicators, link_fun=NULL
 #' Estimate the DID g-formula using inverse-probability-of-treatment-weights.
 #'
 #' @param data Wide format data frame with one row per individual, and columns Lt, At, Yt for t = 0,1,...,Tt.
-#' @param rhs_formula chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.
+#' @param den_formula chr. Right-hand-side glue-style formula to use in fitting treatment models for denominator. Format: '~L\{t\}+L\{t-1\}' etc.
+#' @param num_formula chr. Right-hand-side glue-style formula to use in fitting treatment models for numerator Format: '~L\{t\}+L\{t-1\}' etc.
 #' @param Tt int. Final period in dataset (t=0,1,...,Tt)
 #' @param tibble logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?
 #' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.

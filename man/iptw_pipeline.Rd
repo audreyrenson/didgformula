@@ -20,6 +20,10 @@ iptw_pipeline(
 
 \item{Tt}{int. Final period in dataset (t=0,1,...,Tt)}
 
+\item{den_formula}{chr. Right-hand-side glue-style formula to use in fitting treatment models for denominator. Format: '~L\{t\}+L\{t-1\}' etc.}
+
+\item{num_formula}{chr. Right-hand-side glue-style formula to use in fitting treatment models for numerator Format: '~L\{t\}+L\{t-1\}' etc.}
+
 \item{tibble}{logical. Should the results be returned as a tibble with columns (t, estimates) (TRUE) or a vector of just the estimates  (FALSE)?}
 
 \item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
@@ -27,8 +31,6 @@ iptw_pipeline(
 \item{binomial_n}{int length nrow(data). Group sizes for aggregate binomial data.}
 
 \item{models}{logical. Return all models as an attribute?}
-
-\item{rhs_formula}{chr. Right-hand-side formula to use in predicting the treatment. Format: '~L\{t\}+L\{t-1\}' etc.}
 }
 \value{
 Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).

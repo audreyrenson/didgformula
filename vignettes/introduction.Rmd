@@ -81,7 +81,7 @@ head(df_linear)
 We can calculate the true values of the parameters $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$ by generating a large number of potential outcomes under the same data-generating mechanism. The estimates are just column means of the differences `Yt`-`Yt-1` in the simulated potential outcomes data:
 
 ```{r}
-df_po = generate_data(N=N_obs*10, Tt=time_periods, Beta=parameters, ylink='rnorm_identity', potential_outcomes = TRUE)
+df_po = generate_data(N=N_obs*10, Tt=time_periods, Beta=parameters,  potential_outcomes = TRUE)
 
 truth = estimate_truth(df_po, Tt=time_periods)
 truth
@@ -114,17 +114,17 @@ pt_deviation_histograms(df_po, Tt=time_periods, k=2)
 
 All the estimation pipelines in `didgformula` are written as functions called `*_pipeline()` and have similar (but not exactly the same) arguments. All target the estimands $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$, for $t=1,2,...,T$.  Currently, all expect a wide-format dataset like the one returned by `generate_data(.)`, with outcome columns labeled `Y0`,`Y1`,..., treatments `A0`, `A1`, ..., and for each covariate `L`, `L0`, `L1`, .... The covariates do not need to be called `L` but they do need to be numbered. 
 
-Formulas in `didgformula` are character (not formula), only right-hand-side, and use `glue`-style string interpolation to interpret time indicators. For example, `iptw_pipeline()` expects a right-hand-side formula for the treatment models via the argument `rhs_formula`. For example, the formula `"~x{t}+x{t-1}+y{t}` says that in the model for `A1`, covariates `x1`, `x0`, and `y1` should be included as main terms, and in the model for `A2`, covariates `x2`, `x1`, and `y2`, etc. All these covariates need to be in the dataset and labeled accordingly. The formulas for `or_pipeline` and `ice_pipeline` work similarly.
+Formulas in `didgformula` are character (not formula), only right-hand-side, and use `glue`-style string interpolation to interpret time indicators. For example, `iptw_pipeline()` expects a right-hand-side formula for the denominator models via the argument `den_formula`, and likewise for the numerator models via `num_formula`. For example, the formula `"~x{t}+x{t-1}+y{t}` says that in the model for `A1`, covariates `x1`, `x0`, and `y1` should be included as main terms, and in the model for `A2`, covariates `x2`, `x1`, and `y2`, etc. All these covariates need to be in the dataset and labeled accordingly. The formulas for `or_pipeline` and `ice_pipeline` work similarly.
 
 For example:
 ```{r}
-estimates_iptw = iptw_pipeline(data = df_linear, rhs_formula = '~L{t}', Tt=time_periods)
+estimates_iptw = iptw_pipeline(data = df_linear, den_formula = '~L{t}', num_formula = '~1', Tt=time_periods)
 estimates_iptw
 ```
 
 The column `estimate` gives estimates of $E[Y_t(\bar a) - Y_{t-1}(\bar a)]$ for each $t$ in the column `t`.
 
-`ice_pipeline` fits the iterated conditional estimator. `inside_formula` receives a right-hand-side formula for the outcome regression estimators of the innermost conditional expectations (there are two of them for each $t$, one for $t$ and one for $t-1$). `outside_formula` refers to thee models for every nested expectation except the innermost one (note that the time indicator is labeled `{k}` for the outside formula.)
+`ice_pipeline` fits the iterative conditional estimator. `inside_formula_t` receives a right-hand-side formula for the outcome regression estimators of the innermost conditional expectation of $Y_t$, `inside_formula_tmin1` for $Y_{t-1}$. `outside_formula` refers to the models for every nested expectation except the innermost one (note that the time indicator is labeled `{k}` for the outside formula.)
 
 ```{r}
 estimates_ice = ice_pipeline(data = df_linear, inside_formula_t = '~L{t}', inside_formula_tmin1 = '~L{t-1}', outside_formula = '~L{k}', Tt=time_periods)
@@ -142,7 +142,7 @@ We can compare all these estimates (which should be very precisely similar) alon
 combine_estimates(truth, estimates_iptw, estimates_ice, estimates_or, Tt=time_periods)
 ```
 
-If we were interested in $E[Y_t(\bar a)]$, since the data-generating mechanism has $A_0=0$ with probability 1, we have:
+Since we used saturated models, the estimates from each estimator are nearly identical. In general, large differences among the estimates from different estimators suggest the presence of model mispecification, since with correctly specified models all three target the same quantity. If we were interested in $E[Y_t(\bar a)]$, since the data-generating mechanism has $A_0=0$ with probability 1, we have:
 
 ```{r}
 EY0_truth = mean(df_po$Y0)
@@ -165,7 +165,8 @@ As of this writing, analytic standard errors for the estimators in `didgformula`
 se_iptw = bootstrap_se(data = df_linear, 
                        nboots = 10, #obviously you should use many more than 10
                        estimator = iptw_pipeline,
-                       rhs_formula = '~L{t}',
+                       den_formula = '~L{t}',
+                       num_formula = '~1',
                        Tt = time_periods)
 
 se_iptw                       
