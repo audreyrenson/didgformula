@@ -6,6 +6,7 @@
 #' @param potential_outcomes logical. Should outcomes and covariates be generated with exposure set to 0 at all times?
 #' @param ylink chr. One of "rnorm_identity", "rbinom_logit", or "rbinom_logit_hazard".
 #' @param binomial_n int length N. Defaults to all 1's. If ylink is rbinom_logit, you can optionally pass a vector of group sizes to generate aggregate binomial data. In this case, treatments and covariates will be constant at the group level for a given time period.
+#' @param long lgl. Should the returned dataset be wide (one row per participant, FALSE), or long (Tt+1 rows per participant, TRUE) ?
 #'
 #' @return Data frame with N rows and (Tt+1)*3 + 2 columns - 'uid' is a unique identifier, 'U0' is an 'unmeasured' baseline covariate, L{t},A{t},Y{t} are covariates, exposures, and outcomes, respectively. If binomial_n != 1, an additional column binomial_n is also included.
 #' @export
@@ -16,7 +17,8 @@ generate_data <- function(N,
                           Beta,
                           potential_outcomes=FALSE,
                           ylink = "rnorm_identity",
-                          binomial_n=1){
+                          binomial_n=1,
+                          long=FALSE){
 
   df = data.frame(uid       = seq_len(N),
                   intercept = 1,
@@ -41,10 +43,26 @@ generate_data <- function(N,
   }
 
   df = cbind(df, simulate_y(df=df, Tt=Tt, vars_Y=vars_Y, Beta_Y=Beta$Y, ylink=ylink, binomial_n=binomial_n))
+  df = df[, -grep( c('intercept|zeros|U0times'), names(df))]
 
   if(length(binomial_n) > 1) df$binomial_n = binomial_n
 
-  return( df[, -grep( c('intercept|zeros|U0times'), names(df))] )
+  if(!long) {
+    return(df)
+  } else {
+    return(
+      pivot_longer_gendata(df)
+    )
+  }
+
+}
+
+pivot_longer_gendata = function(df_wide) {
+  df_wide %>%
+    tidyr::pivot_longer(-uid:-U0) %>%
+    tidyr::separate(name, into=c('var','t'), sep=1) %>%
+    tidyr::pivot_wider(names_from = var, values_from = value) %>%
+    dplyr::mutate(t=as.numeric(t))
 }
 
 # generate data from a binomial distribution based on a linear-logistic model
