@@ -1,0 +1,53 @@
+State,State Abbreviation,State FIPS Code,Stay at home/shelter in place,Religious Gatherings Exempt Without Clear Social Distance Mandate*,Stay-at-home order issued but did not specifically restrict movement of the general public,End stay at home/shelter in place ,,Notes
+Alabama,AL,1,4/4/2020,0,0,4/30/2020,,AL - Initial stay-at-home order replaced by less restrictive order on 4/30
+Alaska,AK,2,3/28/2020,0,0,4/24/2020,,
+Arizona,AZ,4,3/31/2020,1,0,5/16/2020,,
+Arkansas,AR,5,0,0,0,0,,
+California,CA,6,3/19/2020,0,0,1/25/2021,,
+Colorado,CO,8,3/26/2020,1,0,4/27/2020,,"CO - Initial stay-at-home order replaced 4/27 with safer-at-home order, which does not mandate that individuals must stay at home"
+Connecticut,CT,9,0,0,3/23/2020,5/20/2020,,"CT - ""Stay Safe, Stay Home"" order does not have any language that orders individuals to stay at home; 3/23/2020 safer-at-home order acted only to close nonessential businesses"
+Delaware,DE,10,3/24/2020,1,0,6/1/2020,,
+District of Columbia,DC,11,4/1/2020,0,0,5/29/2020,,
+Florida,FL,12,4/3/2020,1,0,5/18/2020,,"FL - 5/4 ended stay-at-home order for most counties (remained in place only for Miami-Dade, Broward and Palm Beach counties); 5/18 ended order for entire state"
+Georgia,GA,13,4/3/2020,0,0,5/1/2020,,GA - Only high-risk individuals were ordered to shelter in place
+Hawaii,HI,15,3/25/2020,0,5/7/2020,5/31/2020,,HI - Stay-at-home order was in place through 5/31 but rules began relaxing for certain groups and businesses on 5/7
+Idaho,ID,16,3/25/2020,0,0,5/1/2020,,
+Illinois,IL,17,3/21/2020,0,0,5/29/2020,,
+Indiana,IN,18,3/25/2020,0,0,5/18/2020,,IN - Expired for most counties 5/1; some reopening on 5/4; expired for all counties 5/18
+Iowa,IA,19,0,0,0,0,,
+Kansas,KS,20,3/30/2020,1,0,5/4/2020,,
+Kentucky,KY,21,0,0,3/26/2020,6/29/2020,,KY - Order on 3/25/2020 did not have any language ordering individuals to stay at home; 3/26/2020 order did not order residents to stay at home; Order never applied to the entire state but it expired officially on 6/29/2020
+Louisiana,LA,22,3/23/2020,0,0,5/15/2020,,
+Maine,ME,23,4/2/2020,0,0,5/31/2020,,
+Maryland,MD,24,3/30/2020,0,0,5/15/2020,,
+Massachusetts,MA,25,3/24/2020,0,0,5/18/2020,,MA - Stay-at-home order replaced 5/18 with safer-at-home advisory
+Michigan,MI,26,3/24/2020,1,0,6/1/2020,,
+Minnesota,MN,27,3/28/2020,0,0,5/18/2020,,
+Mississippi,MS,28,4/3/2020,0,0,4/27/2020,,"MS - Replaced stay-at-home order on 4/27 with safer-at-home order, which encouraged but did not mandate that individuals stay at home"
+Missouri,MO,29,4/6/2020,1,0,5/4/2020,,
+Montana,MT,30,3/28/2020,0,0,4/26/2020,,
+Nebraska,NE,31,0,0,0,0,,
+Nevada,NV,32,3/31/2020,0,0,5/9/2020,,
+New Hampshire,NH,33,3/28/2020,0,0,6/16/2020,,
+New Jersey,NJ,34,3/21/2020,0,0,6/9/2020,,
+New Mexico,NM,35,3/24/2020,1,0,0,,
+New York,NY,36,3/22/2020,1,0,6/27/2020,,"NY - ""NY On Pause"" expired 6/27 but the state eased restrictions prior to the expiration (see reopenings for more details)"
+North Carolina,NC,37,3/30/2020,1,0,5/22/2020,,
+North Dakota,ND,38,0,0,0,0,,
+Ohio,OH,39,3/24/2020,1,0,5/20/2020,,
+Oklahoma,OK,40,0,0,4/1/2020,5/15/2020,,OK - Stay-at-home order from 4/1 only applied to those over 65; order was allowed to expire 5/15 per state's website
+Oregon,OR,41,3/23/2020,0,0,6/19/2020,,
+Pennsylvania,PA,42,4/1/2020,1,0,6/5/2020,,PA - 5/8 lifted stay-at-home order for some counties; 5/22 lifted order for more counties
+Rhode Island,RI,44,3/28/2020,0,0,5/9/2020,,
+South Carolina,SC,45,4/7/2020,1,0,5/4/2020,,"SC - Safer-at-home order issued 3/30/2020 ""urged"" individuals to stay at home; Order was revised 4/7, changing ""urged"" to ""required"""
+South Dakota,SD,46,0,0,0,0,,
+Tennessee,TN,47,4/2/2020,1,0,4/29/2020,,
+Texas,TX,48,0,1,4/2/2020,5/1/2020,,"TX - Stay-at-home order issued 4/2, though it does not explicitly order individuals to stay at home"
+Utah,UT,49,0,0,0,0,,
+Vermont,VT,50,3/24/2020,0,0,5/15/2020,,
+Virginia,VA,51,3/30/2020,0,0,5/29/2020,,
+Washington,WA,53,3/23/2020,0,0,6/1/2020,,
+West Virginia,WV,54,3/24/2020,1,0,5/5/2020,,
+Wisconsin,WI,55,3/25/2020,0,0,5/13/2020,,
+Wyoming,WY,56,0,0,0,0,,
+Total,,,40,16,5,43,,

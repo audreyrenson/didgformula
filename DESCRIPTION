@@ -36,3 +36,5 @@ Imports:
     stringr,
     SuppDists
 VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)
