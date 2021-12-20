@@ -13,6 +13,7 @@ recursive_ice_long(
   inside_formula_tmin1,
   outside_formula,
   inside_family,
+  t_col,
   binomial_n = NULL,
   models = TRUE
 )

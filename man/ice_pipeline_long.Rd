@@ -12,10 +12,12 @@ ice_pipeline_long(
   outside_formula,
   Tt,
   t_col,
+  n_nested = Tt,
   inside_family = "gaussian",
   pt_link_fun = NULL,
   binomial_n = NULL,
-  tibble = TRUE
+  tibble = TRUE,
+  models = TRUE
 )
 }
 \arguments{
@@ -27,6 +29,8 @@ ice_pipeline_long(
 
 \item{Tt}{int. max periods}
 
+\item{n_nested}{int. How many nested expectations should be estimated, starting from the innermost (=0) to the outermost (=Tt)?}
+
 \item{inside_family}{stats::family object or string referring to one, as in \code{glm}.}
 
 \item{pt_link_fun}{function. The scale on which parallel trends is assumed (e.g., \code{qlogis} for logit scale). Default \code{NULL} for untransformed scale.}
@@ -34,6 +38,8 @@ ice_pipeline_long(
 \item{binomial_n}{int length nrow(data). Group sizes for binomial aggregate data.}
 
 \item{tibble}{logical. return results as a tibble (TRUE) or vector (FALSE)?}
+
+\item{models}{lgl. Return all models as an attribute?}
 
 \item{data}{Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.}
 }

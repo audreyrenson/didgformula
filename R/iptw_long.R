@@ -1,9 +1,10 @@
 #' @importFrom rlang .data
-calc_inclusion_indicators_long <- function(df_obs, df_interv, idvar='uid', timevar = 't', exposure='A') {
+calc_inclusion_indicators_long <- function(df_obs, df_interv, idvar, timevar, exposure) {
+
+  df_obs[['A_interv']] = df_interv[[exposure]]
 
   df_obs %>%
-    dplyr::left_join(df_interv %>% dplyr::select(!!idvar, !!timevar, A_interv = !!exposure), by=c('uid','t')) %>%
-    dplyr::group_by( .data[[idvar]] ) %>%
+    group_by(.data[[idvar]]) %>%
     dplyr::mutate(incl = cumprod(.data[[exposure]] == .data[['A_interv']])) %>% #this works regardless of whether A is monotonic.
     dplyr::pull(incl)
 
@@ -19,20 +20,27 @@ calc_weights_long <- function(df_obs, den_preds, num_preds, idvar='uid') {
 }
 
 
-estimate_iptw_long <- function(df_obs, yvar, ylagvar, ip_weights, inclusion_indicators, freq_weights, timevar, link_fun = NULL) {
+estimate_iptw_long <- function(df_obs,
+                               yvar,
+                               ylagvar,
+                               ip_weights,
+                               inclusion_indicators,
+                               timevar,
+                               link_fun = NULL,
+                               binomial_n = NULL) {
 
   link_fun = check_link_function(link_fun)
 
-  df_obs[['ipw']] = ip_weights
-  df_obs[['incl']] = inclusion_indicators
-  df_obs[['fw']] = freq_weights
+  df_obs[['IPW__']] = ip_weights
+  df_obs[['INCL__']] = inclusion_indicators
+  df_obs[['BINN__']] = binomial_n
 
   t_list = split(df_obs, df_obs[[timevar]])
 
-  estimate_for_one_timepoint = function(incl, y, ipw, fw) sum(incl*y*ipw*fw)/sum(incl*ipw*fw)
+  estimate_for_one_timepoint = function(incl, y, ipw, binn) sum(incl*y*ipw)/sum(incl*ipw*binn)
 
-  Eyat = sapply(t_list, function(df) estimate_for_one_timepoint(incl = df$incl, y = df[[yvar]], ipw = df$ipw, fw = df$fw))
-  Eyas = sapply(t_list, function(df) estimate_for_one_timepoint(incl = df$incl, y = df[[ylagvar]], ipw = df$ipw, fw = df$fw))
+  Eyat = sapply(t_list, function(df) estimate_for_one_timepoint(incl = df$INCL__, y = df[[yvar]], ipw = df$IPW__, binn = df$BINN__))
+  Eyas = sapply(t_list, function(df) estimate_for_one_timepoint(incl = df$INCL__, y = df[[ylagvar]], ipw = df$IPW__, binn = df$BINN__))
 
   link_fun(Eyat) - link_fun(Eyas)
 }
@@ -52,19 +60,32 @@ iptw_pipeline_long <- function(df_obs,
                                models=TRUE) {
 
   if(!is.null(binomial_n)) {
-    stopifnot(length(binomial_n) != nrow(data))
+    stopifnot(length(binomial_n) == nrow(df_obs))
     df_obs$freq_w = binomial_n / sum(binomial_n)
   } else {
-    df_obs$freq_w = 1
+    binomial_n = df_obs$freq_w = 1
   }
 
   exposure_variable = terms(as.formula(den_formula))[[2]]
 
-  den_mod = glm(den_formula, family, df_obs, weights = freq_w)
+  den_mod = withCallingHandlers({
+    glm(den_formula, family, df_obs, weights = freq_w)
+  }, warning = function(w) {
+    #the non-integer successes warning happens anytime you weight a binomial or other discrete glm, and isn't actually a problem
+    if (startsWith(conditionMessage(w), "non-integer #successes"))
+      invokeRestart("muffleWarning")})
+
   den_preds = dens(df_interv[[exposure_variable]], model=den_mod, newdata=df_interv)
 
   if(!missing(num_formula)) {
-    num_mod = glm(num_formula, family, df_obs, weights = freq_w)
+
+    num_mod = withCallingHandlers({
+      glm(num_formula, family, df_obs, weights = freq_w)
+    }, warning = function(w) {
+      #the non-integer successes warning happens anytime you weight a binomial or other discrete glm, and isn't actually a problem
+      if (startsWith(conditionMessage(w), "non-integer #successes"))
+        invokeRestart("muffleWarning")})
+
     num_preds = dens(df_interv[[exposure_variable]], model=num_mod, newdata=df_interv)
   } else {
     num_mod = NULL
@@ -84,9 +105,9 @@ iptw_pipeline_long <- function(df_obs,
                                  ylagvar = ylagvar,
                                  ip_weights = weights,
                                  inclusion_indicators = inclusion_indicators,
-                                 freq_weights = df_obs$freq_w,
                                  timevar = timevar,
-                                 link_fun = pt_link_fun)
+                                 link_fun = pt_link_fun,
+                                 binomial_n = binomial_n)
   if(!tibble) {
     result = estimates
   } else {
