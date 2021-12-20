@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(didgformula)
-set.seed(777)
+set.seed(777) #what is this, vegas?
 ```
 
 ## Overview
@@ -27,7 +27,7 @@ Suppose we observe $N$ iid copies of $(L_t, A_t, Y_t)$ over periods $t=0,1,...,T
 We again denote potential outcomes $Y_t(\bar a)$, as the outcome that would have occurred at time $t$ had treatment history $\bar a$ been received. Say we with to estimate the quantity
 
 $$
-E[Y_t(\bar a)] = P(T(\bar a)=t)
+\mathbb E[Y_t(\bar a)] = \mathbb P(T(\bar a)=t)
 $$
 
 I.e., the probability of experiencing the first event at time $t$ if (possibly counter to fact) the treatment history $\bar a$ had been received. Say we are willing to make the following assumptions:
@@ -38,35 +38,39 @@ $$
 $$
 2. Positivity
 $$
-P(A_t=a_t|\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1}) > 0
+\mathbb P(A_t=a_t|\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1}) > 0
 $$
-if $P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})>0$.
+if $\mathbb P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})>0$.
 
 3. Generalized parallel trends
 
 For some strictly monotonic $g(.)$, 
 
 $$
-g\bigg(E[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg) - g\bigg(E[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg)
+g\bigg(\mathbb E[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg) - g\bigg(\mathbb E[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg)
 $$
 $$
-=g\bigg(E[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg) - g\bigg(E[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg)
+=g\bigg(\mathbb E[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg) - g\bigg(\mathbb E[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg)
 $$
 for $k\in\{0,...,t\}$, and $t \in \{0,1,..., T\}$. For example, $g(.)$ might be the logit function ($g(x)=\log(x/[1-x]))$. We typically will want to consider functions other than identity because $E[Y_t|.]$ is restricted to lie in $(0,1)$.
 
 4. Pre-identification
 $$
-P(A_0=a_0)=1
+\mathbb P(A_0=a_0)=1
 $$
 
 
 Under assumptions 1-4 with $g(.)$ the logit or cloglog ($g(x)=\log\{-\log[1-x]\}$), the quantity of interest is identified as:
 
 $$
-g(E[Y_t(\bar{a})]) =  g\{E[Y_0]\} 
-+ \sum_{s=1}^{t}\int \bigg(  
-g\{E[Y_s|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}-	g\{E[Y_{s-1}|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}
-\bigg) \prod_{m=0}^{s} dF_{L_m|\bar{L}_{m-1}, \bar{A}_{m-1}}(l_m|\bar{l}_{m-1}, \bar{a}_{m-1})
+g(\mathbb E[Y_t(\bar{a})]) =  g\{\mathbb E[Y_0]\} 
++ \sum_{s=1}^{t}\bigg(  
+g[b_{s,s}(\bar a)]-g[b_{s,s-1}(\bar a)]\bigg)
+$$
+where
+$$
+g[b_{k,t}(\bar a)]=\int \mathbb E[Y_k|\bar{L}_t,\bar{A}_t=\bar{a}_t]\prod_{m=0}^{s} dF_{L_m|\bar{L}_{m-1}, \bar{A}_{m-1}}(l_m|\bar{l}_{m-1}, \bar{a}_{m-1})
+
 $$
 I.e., the difference in differences g-formula under generalized parallel trends. Since estimation of $g\{E[Y_0]\}$ is trivial, we focus on estimating the summand for $s=1,...,t$. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`, by default targeting the summand:
 $$
@@ -124,27 +128,31 @@ pt_deviation_histograms(df_survival_po, Tt=time_periods, k=5, link_fun = qlogis)
 
 ## Estimation
 
-Estimation proceeds similarly as with continuous outcomes (see introduction vignette). Only ICE and outcome regression have been derived under generalized parallel trends. Note that the returned values are estimates of $g(E[Y_t(\bar a)]) - g(E[Y_{t-1}(\bar a)])$, by virtue of specifying `inside_family = 'binomial'`. This is because the logit function is the default link for `stats::binomial()`.
+Estimation proceeds similarly as with continuous outcomes (see introduction vignette).  Note that the returned values are estimates of $g(\mathbb E[Y_t(\bar a)]) - g(\mathbb E[Y_{t-1}(\bar a)])$, by virtue of specifying `pt_link_fun=qlogis`.
 
 ```{r}
-estimates_ice   = ice_pipeline(df_survival, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t}', outside_formula = '~L{k}', inside_family = 'binomial', Tt=time_periods)
-estimates_or    = or_pipeline(df_survival, yt_formula = '~L{t}', ytmin1_formula = '~L{t-1}', l_formula = '~1', y_family = 'binomial', Tt=time_periods, nreps=N_obs)
+estimates_iptw = iptw_pipeline(df_survival, den_formula = '~L{t}', pt_link_fun = qlogis, Tt=time_periods)
+
+estimates_ice   = ice_pipeline(df_survival, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t}', outside_formula = '~L{k}', inside_family = 'binomial', Tt=time_periods, pt_link_fun = qlogis)
+estimates_or    = or_pipeline(df_survival, yt_formula = '~L{t}', ytmin1_formula = '~L{t-1}', l_formula = '~1', y_family = 'binomial', Tt=time_periods, nreps=N_obs, pt_link_fun = qlogis)
 estimates_truth = estimate_truth(df_survival_po, Tt=time_periods, link_fun=qlogis)
 
 combine_estimates(truth=estimates_truth, ice=estimates_ice, or=estimates_or, Tt=time_periods)
 ```
 
-To arrive at estimates of $E[Y_t(\bar a)]$, since $P(A_0=a_0)=1$ by the data-generating mechanism, we have:
+To arrive at estimates of $\mathbb E[Y_t(\bar a)]$, since $\mathbb P(A_0=a_0)=1$ by the data-generating mechanism, we have:
 
 ```{r}
+
 gEY0_truth = qlogis(mean(df_survival_po$Y0))
 gEY0_data  = qlogis(mean(df_survival$Y0))
 
-gEYat_truth = tibble::tibble(t=1:time_periods, estimate = plogis(gEY0_truth + cumsum(estimates_truth$estimate)))
-gEYat_ice = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_ice$estimate)))
-gEYat_or = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_or$estimate)))
+EYat_truth = tibble::tibble(t=1:time_periods, estimate = plogis(gEY0_truth + cumsum(estimates_truth$estimate)))
+EYat_iptw = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_iptw$estimate)))
+EYat_ice = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_ice$estimate)))
+EYat_or = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_or$estimate)))
 
-combined = combine_estimates(gEYat_truth, ice=gEYat_ice, or=gEYat_or, Tt=time_periods)
+combined = combine_estimates(EYat_truth, iptw =EYat_iptw, ice=EYat_ice, or=EYat_or, Tt=time_periods)
 combined
 ```
 

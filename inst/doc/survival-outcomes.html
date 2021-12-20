@@ -339,13 +339,13 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(didgformula)</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">set.seed</span>(<span class="dv">777</span>)</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">set.seed</span>(<span class="dv">777</span>) <span class="co">#what is this, vegas?</span></span></code></pre></div>
 <div id="overview" class="section level2">
 <h2>Overview</h2>
 <p>Suppose we observe <span class="math inline">\(N\)</span> iid copies of <span class="math inline">\((L_t, A_t, Y_t)\)</span> over periods <span class="math inline">\(t=0,1,...,T\)</span>, where <span class="math inline">\(A_t\)</span> is a binary (time-varying) treatment, <span class="math inline">\(L_t\)</span> is a binary (time-varying) covariate, and now (in contrast to the ‘introduction’ vignette), <span class="math inline">\(Y_t\)</span> is a binary indicator of the first occurence of some event (e.g., mortality). We can also define the variable <span class="math inline">\(T\in\{0,1,...\}\)</span> as the discrete time-to-event such that <span class="math inline">\(Y_t = I(T=t)\)</span>, where <span class="math inline">\(I(.)\)</span> is the indicator function. So far we do not deal with censoring (coming soon).</p>
 <p>We again denote potential outcomes <span class="math inline">\(Y_t(\bar a)\)</span>, as the outcome that would have occurred at time <span class="math inline">\(t\)</span> had treatment history <span class="math inline">\(\bar a\)</span> been received. Say we with to estimate the quantity</p>
 <p><span class="math display">\[
-E[Y_t(\bar a)] = P(T(\bar a)=t)
+\mathbb E[Y_t(\bar a)] = \mathbb P(T(\bar a)=t)
 \]</span></p>
 <p>I.e., the probability of experiencing the first event at time <span class="math inline">\(t\)</span> if (possibly counter to fact) the treatment history <span class="math inline">\(\bar a\)</span> had been received. Say we are willing to make the following assumptions:</p>
 <ol style="list-style-type: decimal">
@@ -353,32 +353,31 @@ E[Y_t(\bar a)] = P(T(\bar a)=t)
 \bar A = \bar a \implies Y_t(\bar a) = Y_t
 \]</span></p></li>
 <li><p>Positivity <span class="math display">\[
-P(A_t=a_t|\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1}) &gt; 0
-\]</span> if <span class="math inline">\(P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})&gt;0\)</span>.</p></li>
+\mathbb P(A_t=a_t|\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1}) &gt; 0
+\]</span> if <span class="math inline">\(\mathbb P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})&gt;0\)</span>.</p></li>
 <li><p>Generalized parallel trends</p></li>
 </ol>
 <p>For some strictly monotonic <span class="math inline">\(g(.)\)</span>,</p>
 <p><span class="math display">\[
-g\bigg(E[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg) - g\bigg(E[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg)
+g\bigg(\mathbb E[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg) - g\bigg(\mathbb E[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg)
 \]</span> <span class="math display">\[
-=g\bigg(E[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg) - g\bigg(E[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg)
+=g\bigg(\mathbb E[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg) - g\bigg(\mathbb E[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg)
 \]</span> for <span class="math inline">\(k\in\{0,...,t\}\)</span>, and <span class="math inline">\(t \in \{0,1,..., T\}\)</span>. For example, <span class="math inline">\(g(.)\)</span> might be the logit function (<span class="math inline">\(g(x)=\log(x/[1-x]))\)</span>. We typically will want to consider functions other than identity because <span class="math inline">\(E[Y_t|.]\)</span> is restricted to lie in <span class="math inline">\((0,1)\)</span>.</p>
 <ol start="4" style="list-style-type: decimal">
 <li>Pre-identification <span class="math display">\[
-P(A_0=a_0)=1
+\mathbb P(A_0=a_0)=1
 \]</span></li>
 </ol>
 <p>Under assumptions 1-4 with <span class="math inline">\(g(.)\)</span> the logit or cloglog (<span class="math inline">\(g(x)=\log\{-\log[1-x]\}\)</span>), the quantity of interest is identified as:</p>
 <p><span class="math display">\[
-g(E[Y_t(\bar{a})]) =  g\{E[Y_0]\} 
-+ \sum_{s=1}^{t}\int \bigg(  
-g\{E[Y_s|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}-  g\{E[Y_{s-1}|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}
-\bigg) \prod_{m=0}^{s} dF_{L_m|\bar{L}_{m-1}, \bar{A}_{m-1}}(l_m|\bar{l}_{m-1}, \bar{a}_{m-1})
-\]</span> I.e., the difference in differences g-formula under generalized parallel trends. Since estimation of <span class="math inline">\(g\{E[Y_0]\}\)</span> is trivial, we focus on estimating the summand for <span class="math inline">\(s=1,...,t\)</span>. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in <code>didgformula</code>, by default targeting the summand: <span class="math display">\[
-\int_{\bar l} \bigg(  
-g\{E[Y_s|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}-  g\{E[Y_{s-1}|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}
-\bigg) \prod_{m=0}^{s} dF_{L_m|\bar{L}_{m-1}, \bar{A}_{m-1}}(l_m|\bar{l}_{m-1}, \bar{a}_{m-1})
-\]</span></p>
+g(\mathbb E[Y_t(\bar{a})]) =  g\{\mathbb E[Y_0]\} 
++ \sum_{s=1}^{t}\bigg(  
+g[b_{s,s}(\bar a)]-g[b_{s,s-1}(\bar a)]\bigg)
+\]</span> where $$ g[b_{k,t}(a)]=E[Y_k|{L}_t,{A}_t={a}_t]<em>{m=0}^{s} dF</em>{L_m|{L}<em>{m-1}, {A}</em>{m-1}}(l_m|{l}<em>{m-1}, {a}</em>{m-1})</p>
+<p><span class="math display">\[
+I.e., the difference in differences g-formula under generalized parallel trends. Since estimation of $g\{E[Y_0]\}$ is trivial, we focus on estimating the summand for $s=1,...,t$. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`, by default targeting the summand:
+\]</span> <em>{l} (<br />
+g{E[Y_s|{L}_s,{A}_s={a}_s]}- g{E[Y_{s-1}|{L}_s,{A}_s={a}_s]} ) </em>{m=0}^{s} dF_{L_m|{L}<em>{m-1}, {A}</em>{m-1}}(l_m|{l}<em>{m-1}, {a}</em>{m-1}) $$</p>
 </div>
 <div id="simulating-survival-data-under-generalized-parallel-trends" class="section level2">
 <h2>Simulating survival data under generalized parallel trends</h2>
@@ -466,64 +465,68 @@ g\{E[Y_s|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}-  g\{E[Y_{s-1}|\bar{L}_s,\bar{A}_s=\ba
 </div>
 <div id="estimation" class="section level2">
 <h2>Estimation</h2>
-<p>Estimation proceeds similarly as with continuous outcomes (see introduction vignette). Only ICE and outcome regression have been derived under generalized parallel trends. Note that the returned values are estimates of <span class="math inline">\(g(E[Y_t(\bar a)]) - g(E[Y_{t-1}(\bar a)])\)</span>, by virtue of specifying <code>inside_family = &#39;binomial&#39;</code>. This is because the logit function is the default link for <code>stats::binomial()</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>estimates_ice   =<span class="st"> </span><span class="kw">ice_pipeline</span>(df_survival, <span class="dt">inside_formula_t =</span> <span class="st">&#39;~L{t}&#39;</span>, <span class="dt">inside_formula_tmin1=</span><span class="st">&#39;~L{t}&#39;</span>, <span class="dt">outside_formula =</span> <span class="st">&#39;~L{k}&#39;</span>, <span class="dt">inside_family =</span> <span class="st">&#39;binomial&#39;</span>, <span class="dt">Tt=</span>time_periods)</span>
-<span id="cb7-2"><a href="#cb7-2"></a>estimates_or    =<span class="st"> </span><span class="kw">or_pipeline</span>(df_survival, <span class="dt">yt_formula =</span> <span class="st">&#39;~L{t}&#39;</span>, <span class="dt">ytmin1_formula =</span> <span class="st">&#39;~L{t-1}&#39;</span>, <span class="dt">l_formula =</span> <span class="st">&#39;~1&#39;</span>, <span class="dt">y_family =</span> <span class="st">&#39;binomial&#39;</span>, <span class="dt">Tt=</span>time_periods, <span class="dt">nreps=</span>N_obs)</span>
-<span id="cb7-3"><a href="#cb7-3"></a>estimates_truth =<span class="st"> </span><span class="kw">estimate_truth</span>(df_survival_po, <span class="dt">Tt=</span>time_periods, <span class="dt">link_fun=</span>qlogis)</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a><span class="kw">combine_estimates</span>(<span class="dt">truth=</span>estimates_truth, <span class="dt">ice=</span>estimates_ice, <span class="dt">or=</span>estimates_or, <span class="dt">Tt=</span>time_periods)</span>
-<span id="cb7-6"><a href="#cb7-6"></a><span class="co">#&gt; # A tibble: 10 x 4</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a><span class="co">#&gt;        t  truth      ice       or</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a><span class="co">#&gt;    &lt;int&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
-<span id="cb7-9"><a href="#cb7-9"></a><span class="co">#&gt;  1     1 -1.01  -0.0290  -0.0291 </span></span>
-<span id="cb7-10"><a href="#cb7-10"></a><span class="co">#&gt;  2     2  0.728  0.0144   0.0144 </span></span>
-<span id="cb7-11"><a href="#cb7-11"></a><span class="co">#&gt;  3     3  0.423  0.0190   0.0190 </span></span>
-<span id="cb7-12"><a href="#cb7-12"></a><span class="co">#&gt;  4     4 -0.732 -0.0244  -0.0244 </span></span>
-<span id="cb7-13"><a href="#cb7-13"></a><span class="co">#&gt;  5     5 -0.945 -0.0161  -0.0160 </span></span>
-<span id="cb7-14"><a href="#cb7-14"></a><span class="co">#&gt;  6     6  0.429  0.00395  0.00388</span></span>
-<span id="cb7-15"><a href="#cb7-15"></a><span class="co">#&gt;  7     7 -0.361 -0.00383 -0.00383</span></span>
-<span id="cb7-16"><a href="#cb7-16"></a><span class="co">#&gt;  8     8  0.946  0.0174   0.0175 </span></span>
-<span id="cb7-17"><a href="#cb7-17"></a><span class="co">#&gt;  9     9  0.147  0.00423  0.00412</span></span>
-<span id="cb7-18"><a href="#cb7-18"></a><span class="co">#&gt; 10    10 -1.01  -0.0218  -0.0218</span></span></code></pre></div>
-<p>To arrive at estimates of <span class="math inline">\(E[Y_t(\bar a)]\)</span>, since <span class="math inline">\(P(A_0=a_0)=1\)</span> by the data-generating mechanism, we have:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>gEY0_truth =<span class="st"> </span><span class="kw">qlogis</span>(<span class="kw">mean</span>(df_survival_po<span class="op">$</span>Y0))</span>
-<span id="cb8-2"><a href="#cb8-2"></a>gEY0_data  =<span class="st"> </span><span class="kw">qlogis</span>(<span class="kw">mean</span>(df_survival<span class="op">$</span>Y0))</span>
-<span id="cb8-3"><a href="#cb8-3"></a></span>
-<span id="cb8-4"><a href="#cb8-4"></a>gEYat_truth =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span> <span class="kw">plogis</span>(gEY0_truth <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_truth<span class="op">$</span>estimate)))</span>
-<span id="cb8-5"><a href="#cb8-5"></a>gEYat_ice =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span>  <span class="kw">plogis</span>(gEY0_data <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_ice<span class="op">$</span>estimate)))</span>
-<span id="cb8-6"><a href="#cb8-6"></a>gEYat_or =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span>  <span class="kw">plogis</span>(gEY0_data <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_or<span class="op">$</span>estimate)))</span>
-<span id="cb8-7"><a href="#cb8-7"></a></span>
-<span id="cb8-8"><a href="#cb8-8"></a>combined =<span class="st"> </span><span class="kw">combine_estimates</span>(gEYat_truth, <span class="dt">ice=</span>gEYat_ice, <span class="dt">or=</span>gEYat_or, <span class="dt">Tt=</span>time_periods)</span>
-<span id="cb8-9"><a href="#cb8-9"></a>combined</span>
-<span id="cb8-10"><a href="#cb8-10"></a><span class="co">#&gt; # A tibble: 10 x 4</span></span>
-<span id="cb8-11"><a href="#cb8-11"></a><span class="co">#&gt;        t   truth    ice     or</span></span>
-<span id="cb8-12"><a href="#cb8-12"></a><span class="co">#&gt;    &lt;int&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span id="cb8-13"><a href="#cb8-13"></a><span class="co">#&gt;  1     1 0.0166  0.0452 0.0452</span></span>
-<span id="cb8-14"><a href="#cb8-14"></a><span class="co">#&gt;  2     2 0.0338  0.0459 0.0459</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a><span class="co">#&gt;  3     3 0.0507  0.0467 0.0467</span></span>
-<span id="cb8-16"><a href="#cb8-16"></a><span class="co">#&gt;  4     4 0.0250  0.0456 0.0456</span></span>
-<span id="cb8-17"><a href="#cb8-17"></a><span class="co">#&gt;  5     5 0.00988 0.0449 0.0449</span></span>
-<span id="cb8-18"><a href="#cb8-18"></a><span class="co">#&gt;  6     6 0.0151  0.0451 0.0451</span></span>
-<span id="cb8-19"><a href="#cb8-19"></a><span class="co">#&gt;  7     7 0.0106  0.0449 0.0449</span></span>
-<span id="cb8-20"><a href="#cb8-20"></a><span class="co">#&gt;  8     8 0.0268  0.0457 0.0457</span></span>
-<span id="cb8-21"><a href="#cb8-21"></a><span class="co">#&gt;  9     9 0.0309  0.0459 0.0459</span></span>
-<span id="cb8-22"><a href="#cb8-22"></a><span class="co">#&gt; 10    10 0.0115  0.0449 0.0449</span></span></code></pre></div>
+<p>Estimation proceeds similarly as with continuous outcomes (see introduction vignette). Note that the returned values are estimates of <span class="math inline">\(g(\mathbb E[Y_t(\bar a)]) - g(\mathbb E[Y_{t-1}(\bar a)])\)</span>, by virtue of specifying <code>pt_link_fun=qlogis</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>estimates_iptw =<span class="st"> </span><span class="kw">iptw_pipeline</span>(df_survival, <span class="dt">den_formula =</span> <span class="st">&#39;~L{t}&#39;</span>, <span class="dt">pt_link_fun =</span> qlogis, <span class="dt">Tt=</span>time_periods)</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>estimates_ice   =<span class="st"> </span><span class="kw">ice_pipeline</span>(df_survival, <span class="dt">inside_formula_t =</span> <span class="st">&#39;~L{t}&#39;</span>, <span class="dt">inside_formula_tmin1=</span><span class="st">&#39;~L{t}&#39;</span>, <span class="dt">outside_formula =</span> <span class="st">&#39;~L{k}&#39;</span>, <span class="dt">inside_family =</span> <span class="st">&#39;binomial&#39;</span>, <span class="dt">Tt=</span>time_periods, <span class="dt">pt_link_fun =</span> qlogis)</span>
+<span id="cb7-4"><a href="#cb7-4"></a>estimates_or    =<span class="st"> </span><span class="kw">or_pipeline</span>(df_survival, <span class="dt">yt_formula =</span> <span class="st">&#39;~L{t}&#39;</span>, <span class="dt">ytmin1_formula =</span> <span class="st">&#39;~L{t-1}&#39;</span>, <span class="dt">l_formula =</span> <span class="st">&#39;~1&#39;</span>, <span class="dt">y_family =</span> <span class="st">&#39;binomial&#39;</span>, <span class="dt">Tt=</span>time_periods, <span class="dt">nreps=</span>N_obs, <span class="dt">pt_link_fun =</span> qlogis)</span>
+<span id="cb7-5"><a href="#cb7-5"></a>estimates_truth =<span class="st"> </span><span class="kw">estimate_truth</span>(df_survival_po, <span class="dt">Tt=</span>time_periods, <span class="dt">link_fun=</span>qlogis)</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="kw">combine_estimates</span>(<span class="dt">truth=</span>estimates_truth, <span class="dt">ice=</span>estimates_ice, <span class="dt">or=</span>estimates_or, <span class="dt">Tt=</span>time_periods)</span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">#&gt; # A tibble: 10 x 4</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="co">#&gt;        t  truth    ice     or</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="co">#&gt;    &lt;int&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="co">#&gt;  1     1 -1.01  -1.01  -1.02 </span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="co">#&gt;  2     2  0.728  0.613  0.614</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="co">#&gt;  3     3  0.423  0.502  0.501</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="co">#&gt;  4     4 -0.732 -0.695 -0.695</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="co">#&gt;  5     5 -0.945 -0.947 -0.943</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="co">#&gt;  6     6  0.429  0.323  0.316</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="co">#&gt;  7     7 -0.361 -0.298 -0.298</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a><span class="co">#&gt;  8     8  0.946  0.923  0.928</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="co">#&gt;  9     9  0.147  0.142  0.138</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="co">#&gt; 10    10 -1.01  -1.17  -1.16</span></span></code></pre></div>
+<p>To arrive at estimates of <span class="math inline">\(\mathbb E[Y_t(\bar a)]\)</span>, since <span class="math inline">\(\mathbb P(A_0=a_0)=1\)</span> by the data-generating mechanism, we have:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2"></a>gEY0_truth =<span class="st"> </span><span class="kw">qlogis</span>(<span class="kw">mean</span>(df_survival_po<span class="op">$</span>Y0))</span>
+<span id="cb8-3"><a href="#cb8-3"></a>gEY0_data  =<span class="st"> </span><span class="kw">qlogis</span>(<span class="kw">mean</span>(df_survival<span class="op">$</span>Y0))</span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a>EYat_truth =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span> <span class="kw">plogis</span>(gEY0_truth <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_truth<span class="op">$</span>estimate)))</span>
+<span id="cb8-6"><a href="#cb8-6"></a>EYat_iptw =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span>  <span class="kw">plogis</span>(gEY0_data <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_iptw<span class="op">$</span>estimate)))</span>
+<span id="cb8-7"><a href="#cb8-7"></a>EYat_ice =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span>  <span class="kw">plogis</span>(gEY0_data <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_ice<span class="op">$</span>estimate)))</span>
+<span id="cb8-8"><a href="#cb8-8"></a>EYat_or =<span class="st"> </span>tibble<span class="op">::</span><span class="kw">tibble</span>(<span class="dt">t=</span><span class="dv">1</span><span class="op">:</span>time_periods, <span class="dt">estimate =</span>  <span class="kw">plogis</span>(gEY0_data <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimates_or<span class="op">$</span>estimate)))</span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a>combined =<span class="st"> </span><span class="kw">combine_estimates</span>(EYat_truth, <span class="dt">iptw =</span>EYat_iptw, <span class="dt">ice=</span>EYat_ice, <span class="dt">or=</span>EYat_or, <span class="dt">Tt=</span>time_periods)</span>
+<span id="cb8-11"><a href="#cb8-11"></a>combined</span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="co">#&gt; # A tibble: 10 x 5</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="co">#&gt;        t   truth    iptw     ice      or</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="co">#&gt;    &lt;int&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="co">#&gt;  1     1 0.0166  0.0174  0.0174  0.0174 </span></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="co">#&gt;  2     2 0.0338  0.0317  0.0316  0.0316 </span></span>
+<span id="cb8-17"><a href="#cb8-17"></a><span class="co">#&gt;  3     3 0.0507  0.0513  0.0512  0.0511 </span></span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="co">#&gt;  4     4 0.0250  0.0262  0.0262  0.0262 </span></span>
+<span id="cb8-19"><a href="#cb8-19"></a><span class="co">#&gt;  5     5 0.00988 0.0103  0.0103  0.0104 </span></span>
+<span id="cb8-20"><a href="#cb8-20"></a><span class="co">#&gt;  6     6 0.0151  0.0141  0.0142  0.0142 </span></span>
+<span id="cb8-21"><a href="#cb8-21"></a><span class="co">#&gt;  7     7 0.0106  0.0105  0.0106  0.0106 </span></span>
+<span id="cb8-22"><a href="#cb8-22"></a><span class="co">#&gt;  8     8 0.0268  0.0261  0.0262  0.0263 </span></span>
+<span id="cb8-23"><a href="#cb8-23"></a><span class="co">#&gt;  9     9 0.0309  0.0299  0.0301  0.0301 </span></span>
+<span id="cb8-24"><a href="#cb8-24"></a><span class="co">#&gt; 10    10 0.0115  0.00948 0.00959 0.00958</span></span></code></pre></div>
 <p>If we are interested in risk (<span class="math inline">\(P(T(\bar a) \leq t)\)</span>), we can take the cumulative sum:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>combined <span class="op">%&gt;%</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">mutate</span>(dplyr<span class="op">::</span><span class="kw">across</span>(truth<span class="op">:</span>or, cumsum))</span>
-<span id="cb9-3"><a href="#cb9-3"></a><span class="co">#&gt; # A tibble: 10 x 4</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a><span class="co">#&gt;        t  truth    ice     or</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a><span class="co">#&gt;    &lt;int&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a><span class="co">#&gt;  1     1 0.0166 0.0452 0.0452</span></span>
-<span id="cb9-7"><a href="#cb9-7"></a><span class="co">#&gt;  2     2 0.0504 0.0911 0.0911</span></span>
-<span id="cb9-8"><a href="#cb9-8"></a><span class="co">#&gt;  3     3 0.101  0.138  0.138 </span></span>
-<span id="cb9-9"><a href="#cb9-9"></a><span class="co">#&gt;  4     4 0.126  0.183  0.183 </span></span>
-<span id="cb9-10"><a href="#cb9-10"></a><span class="co">#&gt;  5     5 0.136  0.228  0.228 </span></span>
-<span id="cb9-11"><a href="#cb9-11"></a><span class="co">#&gt;  6     6 0.151  0.273  0.273 </span></span>
-<span id="cb9-12"><a href="#cb9-12"></a><span class="co">#&gt;  7     7 0.162  0.318  0.318 </span></span>
-<span id="cb9-13"><a href="#cb9-13"></a><span class="co">#&gt;  8     8 0.188  0.364  0.364 </span></span>
-<span id="cb9-14"><a href="#cb9-14"></a><span class="co">#&gt;  9     9 0.219  0.410  0.410 </span></span>
-<span id="cb9-15"><a href="#cb9-15"></a><span class="co">#&gt; 10    10 0.231  0.455  0.455</span></span></code></pre></div>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="co">#&gt; # A tibble: 10 x 5</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">#&gt;        t  truth   iptw    ice     or</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="co">#&gt;    &lt;int&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="co">#&gt;  1     1 0.0166 0.0174 0.0174 0.0174</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="co">#&gt;  2     2 0.0504 0.0491 0.0490 0.0490</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co">#&gt;  3     3 0.101  0.100  0.100  0.100 </span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="co">#&gt;  4     4 0.126  0.127  0.126  0.126 </span></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="co">#&gt;  5     5 0.136  0.137  0.137  0.137 </span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="co">#&gt;  6     6 0.151  0.151  0.151  0.151 </span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="co">#&gt;  7     7 0.162  0.162  0.162  0.161 </span></span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="co">#&gt;  8     8 0.188  0.188  0.188  0.188 </span></span>
+<span id="cb9-14"><a href="#cb9-14"></a><span class="co">#&gt;  9     9 0.219  0.218  0.218  0.218 </span></span>
+<span id="cb9-15"><a href="#cb9-15"></a><span class="co">#&gt; 10    10 0.231  0.227  0.228  0.227</span></span></code></pre></div>
 </div>
 
 
