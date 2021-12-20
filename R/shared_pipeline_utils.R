@@ -8,18 +8,16 @@ check_link_function <- function(link_fun) {
 }
 
 make_time_dummies <- function(df, timevar) {
+
   new_timevars = paste0(timevar, min(df[[timevar]]):max(df[[timevar]]))
 
-  result = df %>%
-    dplyr::mutate(dummy = 1) %>%
-    tidyr::pivot_wider(names_from = all_of(timevar), values_from = dummy, names_pre = 't') %>%
-    dplyr::mutate(across(new_timevars, ~ifelse(is.na(.x), 0, .x)))
+  time_columns = model.matrix(as.formula(glue::glue('~-1 +factor({timevar})')), data=df)
+  colnames(time_columns) = new_timevars
 
-  result[[timevar]] = df[[timevar]] #keep the original
-
+  result = dplyr::bind_cols(df, tibble::as_tibble(time_columns))
   attr(result, 'timevars') = new_timevars
 
-  result
+  return(result)
 }
 
 append_lags = function(data, n_lags, lag_vars, default=0) { #perhaps add this to the package??
@@ -29,3 +27,4 @@ append_lags = function(data, n_lags, lag_vars, default=0) { #perhaps add this to
       data[[glue('{lag_var}_lag{n}')]] = dplyr::mutate(data, v=dplyr::lag(.data[[lag_var]], n, default))$v
     return (data)
 }
+
