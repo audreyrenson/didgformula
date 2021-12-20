@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Example analysis: COVID-19 stay-at-home orders and all-cause mortality</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Example analysis: COVID-19 stay-at-home orders and all-cause mortality</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(didgformula)</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="co">#&gt; -- Attaching packages ------------------------------------------------------------------------------------ tidyverse 1.3.1 --</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="co">#&gt; v ggplot2 3.3.3     v purrr   0.3.4</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="co">#&gt; v tibble  3.1.1     v dplyr   1.0.6</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="co">#&gt; v tidyr   1.1.3     v stringr 1.4.0</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="co">#&gt; v readr   1.4.0     v forcats 0.5.1</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="co">#&gt; -- Conflicts --------------------------------------------------------------------------------------- tidyverse_conflicts() --</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="co">#&gt; x dplyr::filter() masks stats::filter()</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="co">#&gt; x dplyr::lag()    masks stats::lag()</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="kw">library</span>(splines)</span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="kw">theme_set</span>(<span class="kw">theme_minimal</span>())</span></code></pre></div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This vignette implements an example analysis using difference-in-differences g-formula estimators and data included in the package. The scientific question is, “what effect would a U.S. federal stay-at-home order have had on all-cause mortality in the early months of the COVID-19 pandemic?” Mathematically, this question can be expressed as <span class="math display">\[
+\mathbb{E}[Y_t(\bar a)] - \mathbb{E}[Y_t]
+\]</span> where <span class="math inline">\(Y_t\)</span> is an indicator (0/1) of mortality in week <span class="math inline">\(t\)</span> in the observable data, and <span class="math inline">\(Y_t(\bar a)\)</span> is that variable under intervention <span class="math inline">\(\bar A=\bar a\)</span>, where <span class="math inline">\(\bar a\)</span> refers to the intervention &quot;set all states to be under stay-at-home order during weeks <code>0</code> through <span class="math inline">\(t\)</span>.</p>
+</div>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>The data are included in the package as:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">data</span>(<span class="st">&quot;stayathome2020&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a>stayathome2020</span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="co">#&gt; # A tibble: 516 x 6</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="co">#&gt;    state    week case_gr stayathome  mort     pop</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="co">#&gt;    &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="co">#&gt;  1 Alabama     0    30.9          1  1135 4876250</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="co">#&gt;  2 Alabama     1    29.6          1  1149 4876250</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="co">#&gt;  3 Alabama     2    31.5          1  1139 4876250</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="co">#&gt;  4 Alabama     3    27.6          1  1147 4876250</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="co">#&gt;  5 Alabama     4    41.0          0  1171 4876250</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="co">#&gt;  6 Alabama     5    42.2          0  1148 4876250</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="co">#&gt;  7 Alabama     6    50.4          0  1153 4876250</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="co">#&gt;  8 Alabama     7    67.8          0  1109 4876250</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="co">#&gt;  9 Alabama     8    54.3          0  1173 4876250</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="co">#&gt; 10 Alabama     9    92.2          0  1138 4876250</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a><span class="co">#&gt; # ... with 506 more rows</span></span></code></pre></div>
+<p>The dataset consists of state-week level observations for all 43 states that ever implemented a stay-at-home order during spring-summer 2020, for 12 weeks (<code>week</code>=0,1,…,11) starting April 4. The data consist of mortality counts (<code>mort</code>) from the National Death Index, state population estimates (<code>pop</code>) based on the 2015-2019 Ammerican Community Survey, counts of new COVID-19 cases in the previous week (<code>case_gr</code>) from the Johns Hopkins COVID-19 dashboard, and an indicator for whether a state was under stay-at-home or shelter-in-place order (<code>stayathome</code>), from COVID-19 US Policies Databsase (CUSP). See <code>?stayathome2020</code> for more info about sources.</p>
+<p>First we do some recoding in preparation for the analysis:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2"></a>sah =<span class="st"> </span>stayathome2020</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co">#the analysis is simpler if the exposure variable is 0 under the intervention in question</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>sah<span class="op">$</span>open =<span class="st"> </span><span class="dv">1</span><span class="op">-</span>sah<span class="op">$</span>stayathome</span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="co">#Week 3 was the first time a stay-at-home ordder was lifted, so sah$open = 0 for everyone before that. </span></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="co">#Thus, we code a variable that is the interaction of week*open that drops terms were sah$open is constant.</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>sah<span class="op">$</span>week_by_open =<span class="st"> </span><span class="kw">ifelse</span>(sah<span class="op">$</span>week <span class="op">-</span><span class="st"> </span><span class="dv">2</span> <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">0</span>, sah<span class="op">$</span>week <span class="op">-</span><span class="st"> </span><span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>sah<span class="op">$</span>open  </span>
+<span id="cb3-9"><a href="#cb3-9"></a></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="co">#coding the outcome as an Nx2 matrix for binomial likelihoods</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>sah<span class="op">$</span>mort_bin =<span class="st"> </span><span class="kw">cbind</span>(sah<span class="op">$</span>mort, sah<span class="op">$</span>pop <span class="op">-</span><span class="st"> </span>sah<span class="op">$</span>mort)</span>
+<span id="cb3-12"><a href="#cb3-12"></a></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="co">#coding lags</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>sah<span class="op">$</span>open_lag =<span class="st"> </span>sah <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(state) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">x=</span>dplyr<span class="op">::</span><span class="kw">lag</span>(open)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>()</span>
+<span id="cb3-15"><a href="#cb3-15"></a>sah<span class="op">$</span>mort_lag =<span class="st"> </span>sah <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(state) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">x=</span>dplyr<span class="op">::</span><span class="kw">lag</span>(mort)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>()</span>
+<span id="cb3-16"><a href="#cb3-16"></a>sah<span class="op">$</span>mort_bin_lag =<span class="st"> </span><span class="kw">cbind</span>(sah<span class="op">$</span>mort_lag, sah<span class="op">$</span>pop <span class="op">-</span><span class="st"> </span>sah<span class="op">$</span>mort_lag)</span>
+<span id="cb3-17"><a href="#cb3-17"></a>sah =<span class="st"> </span>sah <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(state) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">append_lags</span>(<span class="dt">n_lags =</span> <span class="dv">11</span>, <span class="dt">lag_vars =</span> <span class="kw">c</span>(<span class="st">&#39;week_by_open&#39;</span>, <span class="st">&#39;case_gr&#39;</span>), <span class="dt">default =</span> <span class="ot">NA</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">ungroup</span>()</span>
+<span id="cb3-18"><a href="#cb3-18"></a></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="co">#most modeling uses a dataset starting with week=1, so create a separate dataset to simplify</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a>sah_mod =<span class="st"> </span>sah[sah<span class="op">$</span>week <span class="op">&gt;</span><span class="dv">0</span>, ]</span></code></pre></div>
+</div>
+<div id="estimation" class="section level2">
+<h2>Estimation</h2>
+<p>We focus on the interated conditional estimator (ICE) as a primary analysis, and use inverse-probability-of-treatment-weighted estimators as a check on model specification. The two estimators model different parts of the joint distribution of the data, so a disagreement between them (in expectation) indicates model misspecification somewhere (though agreement does not guarantee correct models). We attempt to fit reasonably flexible (e.g., splines, interaction terms) models to the extent possible given the data constraints.</p>
+<p>Note that we specify the estimators to assume parallel trends on the logit scale using the argument <code>pt_link_fun=qlogis</code>, pass <code>R</code>’s native logit function <code>qlogis</code>. That is, we assume:</p>
+<p><span class="math display">\[
+\text{logit }\mathbb{E}[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k] - \text{logit }\mathbb{E}[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\\
+=\text{logit }\mathbb{E}[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k] - \text{logit }\mathbb{E}[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]
+\]</span> for <span class="math inline">\(k=1,...,t\)</span>, with <span class="math inline">\(\text{logit}(x)=\log(x/[1-x])\)</span>. In this example, we consider <span class="math inline">\(L\)</span> to be the number of new cases of COVID-19 in the state in the previous week. For simplicity we also assume that <span class="math inline">\(\mathbb E[Y_t|\bar A_t, \bar L_t]=\mathbb E[Y_t|\bar A_t, L_t]\)</span>, or that the outcome model only depends on the most recent values of <span class="math inline">\(L\)</span>. This simplifies outcome modeling for the sake of exposition, but we may not want to assume this in realistic applications.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="co"># a function to set the exposure variable equal to the intervened status</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>intervene =<span class="st"> </span><span class="cf">function</span>(df_obs) {</span>
+<span id="cb4-4"><a href="#cb4-4"></a>  df_obs <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="kw">across</span>(<span class="kw">contains</span>(<span class="st">&#39;open&#39;</span>), <span class="op">~</span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(.x), <span class="ot">NA</span>, <span class="dv">0</span>)))</span>
+<span id="cb4-5"><a href="#cb4-5"></a>}</span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co"># convenience function for &quot;positive part&quot; of a variable, useful for keeping non-degenerative parts of time*exposure interaction terms</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>pos &lt;-<span class="st"> </span><span class="cf">function</span>(x) <span class="kw">ifelse</span>(x<span class="op">&lt;</span><span class="dv">0</span>, <span class="dv">0</span>, x)</span>
+<span id="cb4-9"><a href="#cb4-9"></a></span>
+<span id="cb4-10"><a href="#cb4-10"></a>ice_estimate =<span class="st"> </span><span class="kw">ice_pipeline_long</span>(<span class="dt">df_obs =</span> sah_mod,</span>
+<span id="cb4-11"><a href="#cb4-11"></a>                                 <span class="dt">df_interv =</span> <span class="kw">intervene</span>(sah_mod),</span>
+<span id="cb4-12"><a href="#cb4-12"></a>                                 <span class="dt">inside_formula_t =</span> <span class="st">&#39;mort_bin ~ ns(week, df=3) + log(case_gr) + week_by_open &#39;</span>,</span>
+<span id="cb4-13"><a href="#cb4-13"></a>                                 <span class="dt">inside_formula_tmin1 =</span> <span class="st">&#39;mort_bin_lag ~ ns(week, df=3) + lag(case_gr) + week_by_open &#39;</span>,</span>
+<span id="cb4-14"><a href="#cb4-14"></a>                                 <span class="dt">outside_formula =</span> <span class="st">&#39;preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_lag{n}) + week_by_open_lag{n}&#39;</span>,</span>
+<span id="cb4-15"><a href="#cb4-15"></a>                                 <span class="dt">Tt =</span> <span class="dv">11</span>,</span>
+<span id="cb4-16"><a href="#cb4-16"></a>                                 <span class="dt">t_col =</span> sah_mod<span class="op">$</span>week,</span>
+<span id="cb4-17"><a href="#cb4-17"></a>                                 <span class="dt">n_nested =</span> <span class="dv">7</span>,</span>
+<span id="cb4-18"><a href="#cb4-18"></a>                                 <span class="dt">inside_family =</span> binomial,</span>
+<span id="cb4-19"><a href="#cb4-19"></a>                                 <span class="dt">pt_link_fun =</span> qlogis,</span>
+<span id="cb4-20"><a href="#cb4-20"></a>                                 <span class="dt">binomial_n =</span> sah_mod<span class="op">$</span>pop)</span>
+<span id="cb4-21"><a href="#cb4-21"></a></span>
+<span id="cb4-22"><a href="#cb4-22"></a>iptw_estimate =<span class="st"> </span><span class="kw">iptw_pipeline_long</span>(<span class="dt">df_obs =</span> sah_mod,</span>
+<span id="cb4-23"><a href="#cb4-23"></a>                                   <span class="dt">df_interv =</span> <span class="kw">intervene</span>(sah_mod),</span>
+<span id="cb4-24"><a href="#cb4-24"></a>                                   <span class="dt">den_formula =</span> <span class="st">&#39;open ~ ns(week, df=3) + log(case_gr)*open_lag&#39;</span>,</span>
+<span id="cb4-25"><a href="#cb4-25"></a>                                   <span class="dt">num_formula =</span> <span class="st">&#39;open ~ ns(week, df=3) + open_lag&#39;</span>,</span>
+<span id="cb4-26"><a href="#cb4-26"></a>                                   <span class="dt">family =</span> binomial,</span>
+<span id="cb4-27"><a href="#cb4-27"></a>                                   <span class="dt">yvar =</span> <span class="st">&#39;mort&#39;</span>,</span>
+<span id="cb4-28"><a href="#cb4-28"></a>                                   <span class="dt">ylagvar =</span> <span class="st">&#39;mort_lag&#39;</span>,</span>
+<span id="cb4-29"><a href="#cb4-29"></a>                                   <span class="dt">idvar=</span><span class="st">&#39;state&#39;</span>,</span>
+<span id="cb4-30"><a href="#cb4-30"></a>                                   <span class="dt">timevar =</span> <span class="st">&#39;week&#39;</span>,</span>
+<span id="cb4-31"><a href="#cb4-31"></a>                                   <span class="dt">pt_link_fun =</span> qlogis,</span>
+<span id="cb4-32"><a href="#cb4-32"></a>                                   <span class="dt">binomial_n =</span> sah_mod<span class="op">$</span>pop)</span>
+<span id="cb4-33"><a href="#cb4-33"></a>ice_estimate</span>
+<span id="cb4-34"><a href="#cb4-34"></a><span class="co">#&gt; # A tibble: 11 x 2</span></span>
+<span id="cb4-35"><a href="#cb4-35"></a><span class="co">#&gt;        t estimate</span></span>
+<span id="cb4-36"><a href="#cb4-36"></a><span class="co">#&gt;    &lt;int&gt;    &lt;dbl&gt;</span></span>
+<span id="cb4-37"><a href="#cb4-37"></a><span class="co">#&gt;  1     1 -0.00789</span></span>
+<span id="cb4-38"><a href="#cb4-38"></a><span class="co">#&gt;  2     2 -0.0227 </span></span>
+<span id="cb4-39"><a href="#cb4-39"></a><span class="co">#&gt;  3     3 -0.0299 </span></span>
+<span id="cb4-40"><a href="#cb4-40"></a><span class="co">#&gt;  4     4 -0.0365 </span></span>
+<span id="cb4-41"><a href="#cb4-41"></a><span class="co">#&gt;  5     5 -0.0459 </span></span>
+<span id="cb4-42"><a href="#cb4-42"></a><span class="co">#&gt;  6     6 -0.0416 </span></span>
+<span id="cb4-43"><a href="#cb4-43"></a><span class="co">#&gt;  7     7 -0.0343 </span></span>
+<span id="cb4-44"><a href="#cb4-44"></a><span class="co">#&gt;  8     8 -0.0254 </span></span>
+<span id="cb4-45"><a href="#cb4-45"></a><span class="co">#&gt;  9     9 -0.0170 </span></span>
+<span id="cb4-46"><a href="#cb4-46"></a><span class="co">#&gt; 10    10 -0.00600</span></span>
+<span id="cb4-47"><a href="#cb4-47"></a><span class="co">#&gt; 11    11  0.00594</span></span>
+<span id="cb4-48"><a href="#cb4-48"></a></span>
+<span id="cb4-49"><a href="#cb4-49"></a>iptw_estimate</span>
+<span id="cb4-50"><a href="#cb4-50"></a><span class="co">#&gt; # A tibble: 11 x 2</span></span>
+<span id="cb4-51"><a href="#cb4-51"></a><span class="co">#&gt;        t estimate</span></span>
+<span id="cb4-52"><a href="#cb4-52"></a><span class="co">#&gt;    &lt;int&gt;    &lt;dbl&gt;</span></span>
+<span id="cb4-53"><a href="#cb4-53"></a><span class="co">#&gt;  1     1 -0.00584</span></span>
+<span id="cb4-54"><a href="#cb4-54"></a><span class="co">#&gt;  2     2 -0.0150 </span></span>
+<span id="cb4-55"><a href="#cb4-55"></a><span class="co">#&gt;  3     3 -0.0528 </span></span>
+<span id="cb4-56"><a href="#cb4-56"></a><span class="co">#&gt;  4     4 -0.0331 </span></span>
+<span id="cb4-57"><a href="#cb4-57"></a><span class="co">#&gt;  5     5 -0.0345 </span></span>
+<span id="cb4-58"><a href="#cb4-58"></a><span class="co">#&gt;  6     6 -0.0505 </span></span>
+<span id="cb4-59"><a href="#cb4-59"></a><span class="co">#&gt;  7     7 -0.0356 </span></span>
+<span id="cb4-60"><a href="#cb4-60"></a><span class="co">#&gt;  8     8 -0.0349 </span></span>
+<span id="cb4-61"><a href="#cb4-61"></a><span class="co">#&gt;  9     9  0.0175 </span></span>
+<span id="cb4-62"><a href="#cb4-62"></a><span class="co">#&gt; 10    10 -0.0168 </span></span>
+<span id="cb4-63"><a href="#cb4-63"></a><span class="co">#&gt; 11    11  0.0218</span></span></code></pre></div>
+<p>Under the stated assumptions, the estimator pipelines return estimates of <span class="math display">\[
+g(\mathbb{E}[Y_t(\bar a)]) - g(\mathbb{E}[Y_{t-1}(\bar a)])
+\]</span> where <span class="math inline">\(g(\cdot)\)</span> is the parallel trends link function. Since the method only helps identify counterfactual <em>trends</em> (i.e. differences over time), it is our responsibility to combine these with quantities that identify counterfactual <em>levels</em> to arrive at estimates for the parameter of interest. In the current setting, the whole population represented in the dataset (i.e., the 43 states that ever implemented stay-at-home orders) began follow up with exposure at the intervened status (i.e. under stay-at-home order), which means that by causal consistency,</p>
+<p><span class="math display">\[
+\mathbb E[Y_0(\bar a)] = \mathbb E[Y_0]
+\]</span></p>
+<p>Thus we can write the target parameter <span class="math inline">\(E[Y_t(\bar a)]\)</span> as <span class="math display">\[
+\mathbb E[Y_t(\bar a)] = g^{-1} \bigg\{ g(\mathbb E[Y_0]) + \sum_{k=1}^t g(\mathbb{E}[Y_t(\bar a)]) - g(\mathbb{E}[Y_{t-1}(\bar a)]) \bigg\}
+\]</span> We substitute estimates (under the stated assumptions) of the above RHS quantities to estimate the target parameter:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a>gEY0 =<span class="st"> </span>sah <span class="op">%&gt;%</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="st">  </span><span class="kw">filter</span>(week<span class="op">==</span><span class="dv">0</span>) <span class="op">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">gEY0 =</span> <span class="kw">qlogis</span>(<span class="kw">sum</span>(mort)<span class="op">/</span><span class="kw">sum</span>(pop))) <span class="op">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="st">  </span><span class="kw">pull</span>()</span>
+<span id="cb5-7"><a href="#cb5-7"></a></span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a>make_rates =<span class="st"> </span><span class="cf">function</span>(estimates, gEY0) {</span>
+<span id="cb5-10"><a href="#cb5-10"></a>  estimates <span class="op">%&gt;%</span><span class="st"> </span>tibble<span class="op">::</span><span class="kw">add_row</span>(<span class="dt">t=</span><span class="dv">0</span>, <span class="dt">estimate=</span><span class="dv">0</span>, <span class="dt">.before=</span><span class="dv">1</span>) <span class="op">%&gt;%</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">estimate =</span> <span class="kw">plogis</span>( gEY0 <span class="op">+</span><span class="st"> </span><span class="kw">cumsum</span>(estimate) ))</span>
+<span id="cb5-12"><a href="#cb5-12"></a>}</span>
+<span id="cb5-13"><a href="#cb5-13"></a></span>
+<span id="cb5-14"><a href="#cb5-14"></a><span class="kw">combine_estimates</span>(<span class="dt">iptw =</span> iptw_estimate <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">make_rates</span>(gEY0),</span>
+<span id="cb5-15"><a href="#cb5-15"></a>                  <span class="dt">ice  =</span> ice_estimate <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">make_rates</span>(gEY0), <span class="dt">Tt=</span><span class="dv">11</span>)</span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="co">#&gt; # A tibble: 11 x 3</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a><span class="co">#&gt;        t     iptw      ice</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="co">#&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="co">#&gt;  1     1 0.000220 0.000220</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a><span class="co">#&gt;  2     2 0.000217 0.000215</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a><span class="co">#&gt;  3     3 0.000206 0.000208</span></span>
+<span id="cb5-22"><a href="#cb5-22"></a><span class="co">#&gt;  4     4 0.000199 0.000201</span></span>
+<span id="cb5-23"><a href="#cb5-23"></a><span class="co">#&gt;  5     5 0.000192 0.000192</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a><span class="co">#&gt;  6     6 0.000183 0.000184</span></span>
+<span id="cb5-25"><a href="#cb5-25"></a><span class="co">#&gt;  7     7 0.000176 0.000178</span></span>
+<span id="cb5-26"><a href="#cb5-26"></a><span class="co">#&gt;  8     8 0.000170 0.000173</span></span>
+<span id="cb5-27"><a href="#cb5-27"></a><span class="co">#&gt;  9     9 0.000173 0.000171</span></span>
+<span id="cb5-28"><a href="#cb5-28"></a><span class="co">#&gt; 10    10 0.000170 0.000170</span></span>
+<span id="cb5-29"><a href="#cb5-29"></a><span class="co">#&gt; 11    11 0.000174 0.000171</span></span></code></pre></div>
+<p>Rate estimates are reasonably similar between the two estimators, though it is clear the ICE estimates are smoother owing to the parametric (spline) form of the outcome models. To better interpret those counterfactual rate estimates, we convert them to death counts and compare them to the observed death counts:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>make_death_counts =<span class="st"> </span><span class="cf">function</span>(estimates, gEY0, pop) {</span>
+<span id="cb6-4"><a href="#cb6-4"></a>  estimates <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">make_rates</span>(gEY0) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">deaths =</span> estimate <span class="op">*</span><span class="st"> </span>pop) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(t, deaths)</span>
+<span id="cb6-5"><a href="#cb6-5"></a>}</span>
+<span id="cb6-6"><a href="#cb6-6"></a></span>
+<span id="cb6-7"><a href="#cb6-7"></a>make_lives_saved =<span class="st"> </span><span class="cf">function</span>(estimates, data) {</span>
+<span id="cb6-8"><a href="#cb6-8"></a>  gEY0 =<span class="st"> </span>data <span class="op">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="st">    </span><span class="kw">filter</span>(week<span class="op">==</span><span class="dv">0</span>) <span class="op">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="st">    </span><span class="kw">summarise</span>(<span class="dt">gEY0 =</span> <span class="kw">qlogis</span>(<span class="kw">sum</span>(mort)<span class="op">/</span><span class="kw">sum</span>(pop))) <span class="op">%&gt;%</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="st">    </span><span class="kw">pull</span>()</span>
+<span id="cb6-12"><a href="#cb6-12"></a></span>
+<span id="cb6-13"><a href="#cb6-13"></a>  counterfactual_deaths =<span class="st"> </span><span class="kw">make_death_counts</span>(estimates, gEY0, <span class="dt">pop=</span><span class="kw">sum</span>(data<span class="op">$</span>pop[data<span class="op">$</span>week<span class="op">==</span><span class="dv">0</span>])) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">pull</span>(deaths) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">sum</span>()</span>
+<span id="cb6-14"><a href="#cb6-14"></a>  factual_deaths =<span class="st"> </span><span class="kw">sum</span>(data<span class="op">$</span>mort)</span>
+<span id="cb6-15"><a href="#cb6-15"></a></span>
+<span id="cb6-16"><a href="#cb6-16"></a>  factual_deaths <span class="op">-</span><span class="st"> </span>counterfactual_deaths</span>
+<span id="cb6-17"><a href="#cb6-17"></a>}</span>
+<span id="cb6-18"><a href="#cb6-18"></a></span>
+<span id="cb6-19"><a href="#cb6-19"></a><span class="kw">make_lives_saved</span>(ice_estimate, sah)</span>
+<span id="cb6-20"><a href="#cb6-20"></a><span class="co">#&gt; [1] 7919.546</span></span>
+<span id="cb6-21"><a href="#cb6-21"></a><span class="kw">make_lives_saved</span>(iptw_estimate, sah)</span>
+<span id="cb6-22"><a href="#cb6-22"></a><span class="co">#&gt; [1] 7981.893</span></span></code></pre></div>
+</div>
+<div id="bootstrap-confidence-intervals" class="section level2">
+<h2>Bootstrap confidence intervals</h2>
+<p>Analytic uncertainty estimators are not yet available for <code>didgformula</code>. However, since the estimators implemented are asymptotically normal, we can use Wald confidence intervals based on the nonparametric bootstrap. Here we assume that the observed population represents an iid sample from a superpopulation.</p>
+<p>We perform 500 bootstrap resamples, exploiting the group structure of the data. That is, since the usual bootstrap places probability <span class="math inline">\(1/N\)</span> on each observation, when the data are grouped into <span class="math inline">\(J\)</span> mutually exclusive groups of size <span class="math inline">\(n_j, j=1,2,...,J\)</span>, where data are constant within groups, the usual bootstrap places probability <span class="math inline">\(1/n_j\)</span> on observations falling into group <span class="math inline">\(j\)</span>. Here, we group observations based on the week of mortality (<span class="math inline">\(0, 1, ..., 11\)</span> or later) and the state.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">set.seed</span>(<span class="dv">40</span>)</span>
+<span id="cb7-2"><a href="#cb7-2"></a>R=<span class="dv">500</span> <span class="co">#number of resamples</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="co">#an equivalent function to *_pipeline()s to estimate rates under the observed treatments.</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>obs_pipeline &lt;-<span class="st"> </span><span class="cf">function</span>(data) {</span>
+<span id="cb7-6"><a href="#cb7-6"></a>  data <span class="op">%&gt;%</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="st">    </span><span class="kw">filter</span>(week<span class="op">&gt;</span><span class="dv">0</span>) <span class="op">%&gt;%</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="st">    </span><span class="kw">group_by</span>(<span class="dt">t=</span>week) <span class="op">%&gt;%</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="st">    </span><span class="kw">summarise</span>(<span class="dt">estimate =</span> <span class="kw">qlogis</span>( <span class="kw">sum</span>(mort)<span class="op">/</span><span class="kw">sum</span>(pop)) <span class="op">-</span><span class="st"> </span><span class="kw">qlogis</span>( <span class="kw">sum</span>(mort_lag) <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(pop) ))</span>
+<span id="cb7-10"><a href="#cb7-10"></a>}</span>
+<span id="cb7-11"><a href="#cb7-11"></a></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="co"># bootstrap based on iid sampling -----------------------------------------</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="co">#add &#39;censored&#39; observations - this is used in bootstrapping the aggregate data</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a>boot_template =<span class="st"> </span>sah <span class="op">%&gt;%</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="st">  </span><span class="kw">bind_rows</span>(sah <span class="op">%&gt;%</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="st">              </span><span class="kw">group_by</span>(state, pop) <span class="op">%&gt;%</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a><span class="st">              </span><span class="kw">summarise</span>(<span class="dt">mort =</span>  <span class="kw">max</span>(pop) <span class="op">-</span><span class="st"> </span><span class="kw">sum</span>(mort)) <span class="op">%&gt;%</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="st">              </span><span class="kw">mutate</span>(<span class="dt">week =</span> <span class="dv">12</span>)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">#just have to remember that 12=never)</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="st">  </span><span class="kw">arrange</span>(state, week)</span>
+<span id="cb7-21"><a href="#cb7-21"></a><span class="co">#&gt; `summarise()` has grouped output by &#39;state&#39;. You can override using the `.groups` argument.</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a></span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a>boot_agg =<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">rep =</span> <span class="dv">1</span><span class="op">:</span>R) <span class="op">%&gt;%</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">data =</span> <span class="kw">map</span>(rep, <span class="op">~</span>boot_template <span class="op">%&gt;%</span><span class="st"> </span><span class="co">#bootstrap the data with the &#39;censored&#39; row</span></span>
+<span id="cb7-26"><a href="#cb7-26"></a><span class="st">                      </span><span class="kw">mutate</span>(<span class="dt">mort =</span> <span class="kw">rmultinom</span>(<span class="dv">1</span>, <span class="kw">sum</span>(mort), <span class="dt">prob=</span>mort<span class="op">/</span><span class="kw">sum</span>(mort))[,<span class="dv">1</span>]) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb7-27"><a href="#cb7-27"></a><span class="st">                      </span><span class="kw">group_by</span>(state) <span class="op">%&gt;%</span></span>
+<span id="cb7-28"><a href="#cb7-28"></a><span class="st">                      </span><span class="kw">mutate</span>(<span class="dt">pop =</span> <span class="kw">sum</span>(mort),</span>
+<span id="cb7-29"><a href="#cb7-29"></a>                             <span class="dt">mort_lag =</span> dplyr<span class="op">::</span><span class="kw">lag</span>(mort),</span>
+<span id="cb7-30"><a href="#cb7-30"></a>                             <span class="dt">mort_bin =</span> <span class="kw">cbind</span>(mort, pop),</span>
+<span id="cb7-31"><a href="#cb7-31"></a>                             <span class="dt">mort_bin_lag =</span> <span class="kw">cbind</span>(mort_lag, pop)) <span class="op">%&gt;%</span></span>
+<span id="cb7-32"><a href="#cb7-32"></a><span class="st">                      </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></span>
+<span id="cb7-33"><a href="#cb7-33"></a><span class="st">                      </span><span class="kw">filter</span>(week <span class="op">&lt;</span><span class="st"> </span><span class="dv">12</span>)),</span>
+<span id="cb7-34"><a href="#cb7-34"></a>         <span class="dt">mod_data =</span> <span class="kw">map</span>(data, filter, week<span class="op">&gt;</span><span class="dv">0</span>),</span>
+<span id="cb7-35"><a href="#cb7-35"></a>         <span class="dt">iptw =</span> <span class="kw">map</span>(mod_data, <span class="op">~</span><span class="kw">iptw_pipeline_long</span>(<span class="dt">df_obs =</span> .,</span>
+<span id="cb7-36"><a href="#cb7-36"></a>                                                  <span class="dt">df_interv =</span> <span class="kw">intervene</span>(.),</span>
+<span id="cb7-37"><a href="#cb7-37"></a>                                                  <span class="dt">den_formula =</span> <span class="st">&#39;open ~ ns(week, df=3) + log(case_gr)*open_lag&#39;</span>,</span>
+<span id="cb7-38"><a href="#cb7-38"></a>                                                  <span class="dt">num_formula =</span> <span class="st">&#39;open ~ ns(week, df=3) + open_lag&#39;</span>,</span>
+<span id="cb7-39"><a href="#cb7-39"></a>                                                  <span class="dt">family =</span> binomial,</span>
+<span id="cb7-40"><a href="#cb7-40"></a>                                                  <span class="dt">yvar =</span> <span class="st">&#39;mort&#39;</span>,</span>
+<span id="cb7-41"><a href="#cb7-41"></a>                                                  <span class="dt">ylagvar =</span> <span class="st">&#39;mort_lag&#39;</span>,</span>
+<span id="cb7-42"><a href="#cb7-42"></a>                                                  <span class="dt">idvar=</span><span class="st">&#39;state&#39;</span>,</span>
+<span id="cb7-43"><a href="#cb7-43"></a>                                                  <span class="dt">timevar =</span> <span class="st">&#39;week&#39;</span>,</span>
+<span id="cb7-44"><a href="#cb7-44"></a>                                                  <span class="dt">pt_link_fun =</span> qlogis,</span>
+<span id="cb7-45"><a href="#cb7-45"></a>                                                  <span class="dt">binomial_n =</span> .<span class="op">$</span>pop)),</span>
+<span id="cb7-46"><a href="#cb7-46"></a>         <span class="dt">ice =</span> <span class="kw">map</span>(mod_data, <span class="op">~</span><span class="kw">ice_pipeline_long</span>(<span class="dt">df_obs =</span> .,</span>
+<span id="cb7-47"><a href="#cb7-47"></a>                                                <span class="dt">df_interv =</span> <span class="kw">intervene</span>(.),</span>
+<span id="cb7-48"><a href="#cb7-48"></a>                                                <span class="dt">inside_formula_t =</span> <span class="st">&#39;mort_bin ~ ns(week, df=3) + log(case_gr) + week_by_open &#39;</span>,</span>
+<span id="cb7-49"><a href="#cb7-49"></a>                                                <span class="dt">inside_formula_tmin1 =</span> <span class="st">&#39;mort_bin_lag ~ ns(week, df=3) + lag(case_gr) + week_by_open &#39;</span>,</span>
+<span id="cb7-50"><a href="#cb7-50"></a>                                                <span class="dt">outside_formula =</span> <span class="st">&#39;preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_lag{n}) + week_by_open_lag{n}&#39;</span>,</span>
+<span id="cb7-51"><a href="#cb7-51"></a>                                                <span class="dt">Tt =</span> <span class="dv">11</span>,</span>
+<span id="cb7-52"><a href="#cb7-52"></a>                                                <span class="dt">t_col =</span> .<span class="op">$</span>week,</span>
+<span id="cb7-53"><a href="#cb7-53"></a>                                                <span class="dt">n_nested =</span> <span class="dv">7</span>,</span>
+<span id="cb7-54"><a href="#cb7-54"></a>                                                <span class="dt">inside_family =</span> binomial,</span>
+<span id="cb7-55"><a href="#cb7-55"></a>                                                <span class="dt">pt_link_fun =</span> qlogis,</span>
+<span id="cb7-56"><a href="#cb7-56"></a>                                                <span class="dt">binomial_n =</span> .<span class="op">$</span>pop)),</span>
+<span id="cb7-57"><a href="#cb7-57"></a>         <span class="dt">obs =</span> <span class="kw">map</span>(mod_data, obs_pipeline))</span>
+<span id="cb7-58"><a href="#cb7-58"></a></span>
+<span id="cb7-59"><a href="#cb7-59"></a><span class="co">#calculate standard errors for the relevant quantities</span></span>
+<span id="cb7-60"><a href="#cb7-60"></a>boot_ses =<span class="st"> </span>boot_agg <span class="op">%&gt;%</span></span>
+<span id="cb7-61"><a href="#cb7-61"></a><span class="st">  </span><span class="kw">pivot_longer</span>(iptw<span class="op">:</span>obs, <span class="dt">names_to=</span><span class="st">&#39;method&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb7-62"><a href="#cb7-62"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">gEY0 =</span> <span class="kw">map</span>(data, <span class="op">~</span><span class="kw">with</span>(.[.<span class="op">$</span>week<span class="op">==</span><span class="dv">0</span>, ], <span class="kw">qlogis</span>(<span class="kw">sum</span>(mort)<span class="op">/</span><span class="kw">sum</span>(pop)))),</span>
+<span id="cb7-63"><a href="#cb7-63"></a>         <span class="dt">rates =</span> <span class="kw">map2</span>(value, gEY0, make_rates),</span>
+<span id="cb7-64"><a href="#cb7-64"></a>         <span class="dt">lives =</span> <span class="kw">map2_dbl</span>(value, data, make_lives_saved)) <span class="op">%&gt;%</span></span>
+<span id="cb7-65"><a href="#cb7-65"></a><span class="st">  </span><span class="kw">unnest</span>(rates) <span class="op">%&gt;%</span></span>
+<span id="cb7-66"><a href="#cb7-66"></a><span class="st">  </span><span class="kw">group_by</span>(t, method) <span class="op">%&gt;%</span></span>
+<span id="cb7-67"><a href="#cb7-67"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">rate_mean =</span> <span class="kw">mean</span>(estimate),</span>
+<span id="cb7-68"><a href="#cb7-68"></a>            <span class="dt">rate_se =</span> <span class="kw">sd</span>(estimate),</span>
+<span id="cb7-69"><a href="#cb7-69"></a>            <span class="dt">lives_mean =</span> <span class="kw">mean</span>(lives),</span>
+<span id="cb7-70"><a href="#cb7-70"></a>            <span class="dt">lives_se =</span> <span class="kw">sd</span>(lives))</span>
+<span id="cb7-71"><a href="#cb7-71"></a><span class="co">#&gt; `summarise()` has grouped output by &#39;t&#39;. You can override using the `.groups` argument.</span></span></code></pre></div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+<p>Estimate the numer of lives saved with 95% confidence intervals:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2"></a>lives_estimates_se =<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">method =</span> <span class="kw">c</span>(<span class="st">&#39;iptw&#39;</span>,<span class="st">&#39;ice&#39;</span>),</span>
+<span id="cb8-3"><a href="#cb8-3"></a>                            <span class="dt">lives =</span> <span class="kw">sapply</span>(<span class="kw">list</span>(iptw_estimate, ice_estimate),</span>
+<span id="cb8-4"><a href="#cb8-4"></a>                                           make_lives_saved, sah)) <span class="op">%&gt;%</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="st">  </span><span class="kw">left_join</span>(boot_ses <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(method <span class="op">!=</span><span class="st"> &#39;obs&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(method, <span class="dt">se=</span>lives_se) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>()) <span class="op">%&gt;%</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lwr =</span> lives <span class="op">-</span><span class="st"> </span><span class="fl">1.96</span><span class="op">*</span>se, <span class="dt">upr =</span> lives <span class="op">+</span><span class="st"> </span><span class="fl">1.96</span><span class="op">*</span>se)</span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">#&gt; Joining, by = &quot;method&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a></span>
+<span id="cb8-9"><a href="#cb8-9"></a>  </span>
+<span id="cb8-10"><a href="#cb8-10"></a>lives_estimates_se</span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="co">#&gt; # A tibble: 2 x 5</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="co">#&gt;   method lives     se     lwr    upr</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="co">#&gt;   &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="co">#&gt; 1 iptw   7982. 10514. -12626. 28590.</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="co">#&gt; 2 ice    7920.  2049.   3904. 11935.</span></span></code></pre></div>
+<p>Clearly the IPTW estimator is far less precise in this example. We can visualize the estimated rates as follows:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>df_figure =<span class="st"> </span><span class="kw">list</span>(<span class="dt">ice=</span>ice_estimate,</span>
+<span id="cb9-2"><a href="#cb9-2"></a>                 <span class="dt">iptw=</span>iptw_estimate,</span>
+<span id="cb9-3"><a href="#cb9-3"></a>                 <span class="dt">obs =</span> <span class="kw">obs_pipeline</span>(sah)) <span class="op">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="st">  </span><span class="kw">map</span>(make_rates, gEY0) <span class="op">%&gt;%</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="st">  </span><span class="kw">bind_rows</span>(<span class="dt">.id=</span><span class="st">&#39;method&#39;</span>)  <span class="op">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="st">  </span><span class="kw">left_join</span>(boot_ses <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(method, t, <span class="dt">se=</span>rate_se)) <span class="op">%&gt;%</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lwr =</span> estimate <span class="op">-</span><span class="st"> </span><span class="fl">1.96</span><span class="op">*</span>se, <span class="dt">upr =</span> estimate<span class="fl">+1.96</span><span class="op">*</span>se)</span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co">#&gt; Joining, by = c(&quot;method&quot;, &quot;t&quot;)</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a></span>
+<span id="cb9-10"><a href="#cb9-10"></a>df_figure <span class="op">%&gt;%</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="kw">across</span>(estimate<span class="op">:</span>upr, <span class="op">~</span>.<span class="op">*</span><span class="fl">1e5</span>),</span>
+<span id="cb9-12"><a href="#cb9-12"></a>         <span class="dt">Estimator =</span> <span class="kw">case_when</span>(method <span class="op">==</span><span class="st"> &#39;ice&#39;</span> <span class="op">~</span><span class="st">&#39;Iterated conditional&#39;</span>,</span>
+<span id="cb9-13"><a href="#cb9-13"></a>                               method <span class="op">==</span><span class="st"> &#39;iptw&#39;</span> <span class="op">~</span><span class="st">&#39;Inverse probability weighted&#39;</span>,</span>
+<span id="cb9-14"><a href="#cb9-14"></a>                               method <span class="op">==</span><span class="st"> &#39;obs&#39;</span> <span class="op">~</span><span class="st"> &#39;Observed rates&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x=</span>t, <span class="dt">y=</span>estimate, <span class="dt">ymin=</span>lwr, <span class="dt">ymax=</span>upr, <span class="dt">color=</span>Estimator, <span class="dt">fill=</span>Estimator)) <span class="op">+</span></span>
+<span id="cb9-16"><a href="#cb9-16"></a><span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span></span>
+<span id="cb9-17"><a href="#cb9-17"></a><span class="st">  </span><span class="kw">geom_ribbon</span>(<span class="dt">alpha=</span><span class="fl">0.2</span>) <span class="op">+</span></span>
+<span id="cb9-18"><a href="#cb9-18"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">legend.justification =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>)) <span class="op">+</span></span>
+<span id="cb9-19"><a href="#cb9-19"></a><span class="st">  </span><span class="kw">labs</span>(<span class="dt">x=</span><span class="st">&#39;Weeks since April 4, 2020&#39;</span>, <span class="dt">y=</span><span class="st">&#39;U.S. all-cause mortality rate per 100k (95% CI)&#39;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
