@@ -78,8 +78,8 @@ estimate_iptw <- function(data, Tt, weights, inclusion_indicators, link_fun=NULL
 
   yt = data %>% dplyr::select(Y1:glue::glue('Y{Tt}')) %>% as.matrix()
   ytmin1 = data %>% dplyr::select(Y0:glue::glue('Y{Tt-1}')) %>% as.matrix()
-  gEyt = link_fun(colSums(inclusion_indicators * yt * weights) / colSums(inclusion_indicators * weights))
-  gEytmin1 = link_fun(colSums(inclusion_indicators * ytmin1 * weights) /colSums(inclusion_indicators * weights))
+  gEyt = link_fun(colSums(inclusion_indicators * yt * weights) / colSums(inclusion_indicators * weights * binomial_n))
+  gEytmin1 = link_fun(colSums(inclusion_indicators * ytmin1 * weights) /colSums(inclusion_indicators * weights* binomial_n))
 
   #returns a Tx1 vector of \hat\E[Y_t(\bar a) - Y_{t-1}(\bar a)], t=1,2,...,T
   return (gEyt - gEytmin1)
