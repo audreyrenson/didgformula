@@ -20,6 +20,17 @@ make_time_dummies <- function(df, timevar) {
   return(result)
 }
 
+#' Append n lags of a group of variables to a dataset
+#'
+#' @param data data frame
+#' @param n_lags int. number of lags to append
+#' @param lag_vars character vector. Names of dataframe columns for which you want lags
+#' @param default vector of length 1 or nrow(data), as in the `default` argument in `dplyr::lag`.
+#'
+#' @return The original data frame with additional columns `x_lag1`,`x_lag2`,...,`x_lag{n_lags}` for `x` in `lag_vars`.
+#' @export
+#'
+#' @examples
 append_lags = function(data, n_lags, lag_vars, default=0) { #perhaps add this to the package??
   for(n in 1:n_lags)
     for(lag_var in lag_vars)
