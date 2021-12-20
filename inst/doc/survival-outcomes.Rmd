@@ -1,0 +1,158 @@
+---
+title: "Difference-in-differences g-formula with survival outcomes"
+author: Audrey Renson
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Difference-in-differences g-formula with survival outcomes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(didgformula)
+set.seed(777)
+```
+
+## Overview
+
+Suppose we observe $N$ iid copies of $(L_t, A_t, Y_t)$ over periods $t=0,1,...,T$, where $A_t$ is a binary (time-varying) treatment, $L_t$ is a binary (time-varying) covariate, and now (in contrast to the 'introduction' vignette), $Y_t$ is a binary indicator of the first occurence of some event (e.g., mortality). We can also define the variable $T\in\{0,1,...\}$ as the discrete time-to-event such that $Y_t = I(T=t)$, where $I(.)$ is the indicator function. So far we do not deal with censoring (coming soon).
+
+We again denote potential outcomes $Y_t(\bar a)$, as the outcome that would have occurred at time $t$ had treatment history $\bar a$ been received. Say we with to estimate the quantity
+
+$$
+E[Y_t(\bar a)] = P(T(\bar a)=t)
+$$
+
+I.e., the probability of experiencing the first event at time $t$ if (possibly counter to fact) the treatment history $\bar a$ had been received. Say we are willing to make the following assumptions:
+
+1. SUTVA
+$$
+\bar A = \bar a \implies Y_t(\bar a) = Y_t
+$$
+2. Positivity
+$$
+P(A_t=a_t|\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1}) > 0
+$$
+if $P(\bar L_t=\bar l_t, \bar A_{t-1}=\bar a_{t-1})>0$.
+
+3. Generalized parallel trends
+
+For some strictly monotonic $g(.)$, 
+
+$$
+g\bigg(E[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg) - g\bigg(E[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\bigg)
+$$
+$$
+=g\bigg(E[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg) - g\bigg(E[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]\bigg)
+$$
+for $k\in\{0,...,t\}$, and $t \in \{0,1,..., T\}$. For example, $g(.)$ might be the logit function ($g(x)=\log(x/[1-x]))$. We typically will want to consider functions other than identity because $E[Y_t|.]$ is restricted to lie in $(0,1)$.
+
+4. Pre-identification
+$$
+P(A_0=a_0)=1
+$$
+
+
+Under assumptions 1-4 with $g(.)$ the logit or cloglog ($g(x)=\log\{-\log[1-x]\}$), the quantity of interest is identified as:
+
+$$
+g(E[Y_t(\bar{a})]) =  g\{E[Y_0]\} 
++ \sum_{s=1}^{t}\int \bigg(  
+g\{E[Y_s|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}-	g\{E[Y_{s-1}|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}
+\bigg) \prod_{m=0}^{s} dF_{L_m|\bar{L}_{m-1}, \bar{A}_{m-1}}(l_m|\bar{l}_{m-1}, \bar{a}_{m-1})
+$$
+I.e., the difference in differences g-formula under generalized parallel trends. Since estimation of $g\{E[Y_0]\}$ is trivial, we focus on estimating the summand for $s=1,...,t$. We can estimate this population quantity using inverse weighting, iterated conditional outcome modeling, or by modeling the outcome and covariates. Each of these approaches is implemented in `didgformula`, by default targeting the summand:
+$$
+\int_{\bar l} \bigg(  
+g\{E[Y_s|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}-	g\{E[Y_{s-1}|\bar{L}_s,\bar{A}_s=\bar{a}_s]\}
+\bigg) \prod_{m=0}^{s} dF_{L_m|\bar{L}_{m-1}, \bar{A}_{m-1}}(l_m|\bar{l}_{m-1}, \bar{a}_{m-1})
+$$
+
+## Simulating survival data under generalized parallel trends
+
+`didgformula` contains functionality for simulating survival data under generalized parallel trends on the logit scale. The default setup has one unmeasured baseline covariate, $U_0$, time-varying binary covariates $L_t$, binary treatments $A_t$, and binary outcomes $Y_t$ that can equal 1 for only one $t$ for each participant, observed over periods $t=0,1,...,T$. First we select parameters for the data-generating models, which are generated from a normal distribution by default (with the exception of $U_0$ which always has prevalence $0.5$). For now the parameters are packaged as a list of matrices with $T+1$ rows and the same number of columns as coefficients in the data-generating models. We specify the argument `range_ymeans=qlogis(c(0.01, 0.05)` to keep the mean of each $Y_t$ within a range that keeps $F_T(t)\leq 1$ for all $t$. This fact is checked using `check_CDF=TRUE` - a warning will be thrown if the implied CDF is ever greater than $1$.
+
+
+```{r}
+N_obs = 1e4
+time_periods = 10
+parameters = generate_parameters(Tt=time_periods, range_ymeans = qlogis(c(0.01, 0.05)), check_CDF=TRUE)
+parameters
+
+```
+
+For `generate_data()`, we specify the argument `ylink="rbinom_logit_hazard"` to specify that the parameters are for a logistic-linear model for $Y_t=I(T=t)$, and the 'hazard' piece indicates that the event happens only once. (The parameters are for the mass function, but internally the data are generated according to the implied hazard function.) 
+
+```{r}
+df_survival = generate_data(N=N_obs, Tt=time_periods, Beta=parameters, ylink="rbinom_logit_hazard")
+head(df_survival)
+```
+
+We will also store potential outcomes to later estimate the 'true' values of the parameters.
+
+```{r}
+df_survival_po = generate_data(N=N_obs*10, Tt=time_periods, Beta=parameters, ylink="rbinom_logit_hazard", potential_outcomes = TRUE)
+head(df_survival_po)
+```
+
+The data-generating mechanism used in `generate_data(ylink="rbinom_logit_hazard")` is:
+
+$$ U_0 \sim \text{Bernoulli}(0.5) $$
+$$ L_t \sim \text{Bernoulli}(\text{logit}^{-1}[\gamma_{0t} + \gamma_{1t}A_{t-1}]) $$
+$$ A_0 = 0$$
+$$(A_t | A_{t-1} = 1) = 1$$
+$$(A_t | A_{t-1} = 0) \sim \text{Bernoulli}(\text{logit}{-1}[\alpha_{0t} +\alpha_{1t}U_0 + \alpha_{2t}L_t])$$
+$$Y_t \sim \text{Bernoulli}(\text{logit}^{-1}[\beta_{0t} + \beta_{1t}A_t + \beta_{2t}L_t + \beta_3U_0 + \beta_4U_0L_t])$$
+This data-generating mechanism is consistent with with generalized parallel trends with $g(x)=\log(x/[1-x])$, provable by the fact that $L_t \coprod U_0 |\bar L_{t-1}, \bar A_{t-1}=\bar a_{t-1}$ and $\frac{\partial g(E[Y_t|\bar L_t, \bar A_t=\bar a_t, U_0])}{\partial U_0}=\frac{\partial g( E[Y_{t-1}|\bar L_t, \bar A_t=\bar a_t, U_0])}{\partial U_0}=0.1$.
+
+We can check whether generalized parallel trends is approximately satisfied using the simulated potential outcomes data. We specify the argument `link_fun=qlogis` to indicate that we are checking generalized parallel trends on the logit scale. This parameter takes a function as argument and `qlogis()` is R's built in logit function.
+```{r}
+pt_deviation_histograms(df_survival_po, Tt=time_periods, link_fun = qlogis)
+```
+
+The matrix of histograms has $t$ on the x-axis and $k$ on the y-axis, so that the $(t, k)$th cell displays estimates of $E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]=E[Y_t(\bar a) - Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]$ across possible values of $\bar L_k$ (actually, just $L_k$ is sufficient based on the data-generating mechanism). These estimates should look like unbiased estimates of zero (each cell should look like it has mean 0, the red line). With survival data there are often many time periods, so it will typically be difficult to plot paralle trend deviations for all of them. To look at one $k$ at a time: 
+```{r}
+pt_deviation_histograms(df_survival_po, Tt=time_periods, k=5, link_fun = qlogis)
+```
+
+## Estimation
+
+Estimation proceeds similarly as with continuous outcomes (see introduction vignette). Only ICE and outcome regression have been derived under generalized parallel trends. Note that the returned values are estimates of $g(E[Y_t(\bar a)]) - g(E[Y_{t-1}(\bar a)])$, by virtue of specifying `inside_family = 'binomial'`. This is because the logit function is the default link for `stats::binomial()`.
+
+```{r}
+estimates_ice   = ice_pipeline(df_survival, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t}', outside_formula = '~L{k}', inside_family = 'binomial', Tt=time_periods)
+estimates_or    = or_pipeline(df_survival, yt_formula = '~L{t}', ytmin1_formula = '~L{t-1}', l_formula = '~1', y_family = 'binomial', Tt=time_periods, nreps=N_obs)
+estimates_truth = estimate_truth(df_survival_po, Tt=time_periods, link_fun=qlogis)
+
+combine_estimates(truth=estimates_truth, ice=estimates_ice, or=estimates_or, Tt=time_periods)
+```
+
+To arrive at estimates of $E[Y_t(\bar a)]$, since $P(A_0=a_0)=1$ by the data-generating mechanism, we have:
+
+```{r}
+gEY0_truth = qlogis(mean(df_survival_po$Y0))
+gEY0_data  = qlogis(mean(df_survival$Y0))
+
+gEYat_truth = tibble::tibble(t=1:time_periods, estimate = plogis(gEY0_truth + cumsum(estimates_truth$estimate)))
+gEYat_ice = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_ice$estimate)))
+gEYat_or = tibble::tibble(t=1:time_periods, estimate =  plogis(gEY0_data + cumsum(estimates_or$estimate)))
+
+combined = combine_estimates(gEYat_truth, ice=gEYat_ice, or=gEYat_or, Tt=time_periods)
+combined
+```
+
+If we are interested in risk ($P(T(\bar a) \leq t)$), we can take the cumulative sum:
+```{r}
+combined %>%
+  dplyr::mutate(dplyr::across(truth:or, cumsum))
+```
+
+
+
