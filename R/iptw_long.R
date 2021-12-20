@@ -45,6 +45,26 @@ estimate_iptw_long <- function(df_obs,
   link_fun(Eyat) - link_fun(Eyas)
 }
 
+#' Estimate the DID g-formula using inverse-probability-of-treatment-weights with exposure models pooled over time periods.
+#'
+#' @param df_obs long format data frame, ordered by person id, then time
+#' @param df_interv same data set as df_obs with exposure variable set to the intervened status
+#' @param den_formula chr or formula. `glm` formula for (pooled) denominator model
+#' @param num_formula chr or formula. `glm` formula for (pooled) numerator model
+#' @param family stats::families object for numerator and denominator `glm` call
+#' @param yvar chr. Name of column in `df_obs` corresponding to the outcome at time `t`
+#' @param ylagvar chr. Name of column in `df_obs` corresponding to the outcome at time `t-1`
+#' @param idvar chr. Name of column in `df_obs` corresponding to the person id
+#' @param timevar chr. Name of column in `df_obs` corresponding to times (typically starting from 1, so that t-1=0)
+#' @param tibble lgl. Return results as a tibble (TRUE) or vector (FALSE)?
+#' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.
+#' @param binomial_n int length nrow(data). Group sizes for aggregate binomial data.
+#' @param models logical. Return all models as an attribute?
+#'
+#' @return Estimates of E(Yt(a) - Yt-1(a)), in the form of a tibble or vector (dependening on argument tibble), for times t=1,2,...,Tt (in that order).
+#' @export
+#'
+#' @examples
 iptw_pipeline_long <- function(df_obs,
                                df_interv,
                                den_formula,
