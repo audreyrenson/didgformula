@@ -17,7 +17,7 @@ test_that("ice_long returns same result as ice", {
   df_interv <- df_long %>% dplyr::mutate(dplyr::across(dplyr::starts_with('A'), ~0))
   tvars = attr(df_long, 'timevars')
 
-  ice_preds = recursive_ice_long(Tt=Tt,
+  ice_long = ice_pipeline_long(Tt=Tt,
                      n_nested=Tt,
                      df_obs=df_long,
                      df_interv=df_interv,
@@ -25,10 +25,9 @@ test_that("ice_long returns same result as ice", {
                      inside_formula_tmin1 ='Y_lag~ -1 + {tvars}*L_lag1*A - L_lag1*A',
                      outside_formula = 'preds ~ -1 + {tvars}*L_lag{n}*A_lag{n} - L_lag{n}*A_lag{n} - t{n}:A_lag{n} - t{n}:L_lag{n}:A_lag{n} ',
                      inside_family=gaussian,
+                     t_col = df_long$t,
                      models=TRUE)
 
-
-  ice_long = estimate_ice_long(ice_preds, t_col = df_long$t) #why are these slightly different?
   ice_wide = ice_pipeline(df_wide, '~L{t}', '~L{t-1}', '~L{k}', Tt)
 
   expect_equal(ice_long$estimate, ice_wide$estimate)

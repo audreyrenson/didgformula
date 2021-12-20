@@ -5,10 +5,12 @@
 #' @param inside_formula_tmin1 chr, right-hand-side formula for inside model for Yt-1
 #' @param outside_formula chr, right-hand-side formula for outside models
 #' @param Tt int. max periods
+#' @param n_nested int. How many nested expectations should be estimated, starting from the innermost (=0) to the outermost (=Tt)?
 #' @param inside_family stats::family object or string referring to one, as in `glm`.
 #' @param binomial_n int length nrow(data). Group sizes for binomial aggregate data.
 #' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.
 #' @param tibble logical. return results as a tibble (TRUE) or vector (FALSE)?
+#' @param models lgl. Return all models as an attribute?
 #'
 #' @return
 #' @export
@@ -21,30 +23,37 @@ ice_pipeline_long <- function(df_obs,
                               outside_formula,
                               Tt,
                               t_col,
+                              n_nested=Tt,
                               inside_family='gaussian',
                               pt_link_fun=NULL,
                               binomial_n=NULL,
-                              tibble=TRUE) {
+                              tibble=TRUE,
+                              models=TRUE) {
 
   ice_preds = recursive_ice_long(Tt=Tt,
-                                 n_nested=Tt,
+                                 n_nested=n_nested,
                                  df_obs = df_obs,
                                  df_interv=df_interv,
                                  inside_formula_t = inside_formula_t,
                                  inside_formula_tmin1 = inside_formula_tmin1,
                                  outside_formula = outside_formula,
                                  inside_family=inside_family,
-                                 binomial_n = binomial_n)
+                                 t_col = t_col,
+                                 binomial_n = binomial_n,
+                                 models=models)
 
   ice_estimates = estimate_ice_long(ice_preds, t_col, pt_link_fun, binomial_n)
-  ice_estimates = sapply(ice_preds, estimate_ice, link_fun=pt_link_fun, binomial_n)
 
   if(!tibble) {
-    return (ice_estimates)
+    result = ice_estimates
   } else {
-    return ( tibble::tibble(t=1:Tt,
-                            estimate = ice_estimates))
+    result = tibble::tibble(t=1:Tt,
+                            estimate = ice_estimates)
   }
+
+  if(models) attr(result, 'models') = attr(ice_preds, 'models')
+
+  return(result)
 
 }
 
@@ -85,6 +94,7 @@ recursive_ice_long <- function(Tt,
                                inside_formula_tmin1,
                                outside_formula,
                                inside_family,
+                               t_col,
                                binomial_n=NULL,
                                models=TRUE) {
 
@@ -110,13 +120,13 @@ recursive_ice_long <- function(Tt,
                                inside_formula_tmin1,
                                outside_formula,
                                inside_family,
+                               t_col,
                                binomial_n,
                                models)
 
-    obs_keep = df_obs$t >= n_nested #we can only go outward n_nested expectations if that doesn't take us before time 0
+    obs_keep = t_col >= n_nested #we can only go outward n_nested expectations if that doesn't take us before time 0
     n = n_nested #for convenience, allow user to specify formulas with x{n} where {n} is shorthand for {n_nested}
     formula_n = glue(outside_formula)
-
 
     two_models = list()
     two_models[['tmin1']] = fit_outer_exp_model_long(n_nested, df_obs, preds[,1], formula_n, binomial_n, obs_keep)
@@ -167,7 +177,6 @@ estimate_ice_long <- function(ice_preds, #(NxTt)x2 matrix
   } else {
     stopifnot(is.function(link_fun))
   }
-
   if(is.null(binomial_n)) binomial_n = rep(1, nrow(ice_preds))
   freq_w = binomial_n / sum(binomial_n)
 
@@ -175,5 +184,5 @@ estimate_ice_long <- function(ice_preds, #(NxTt)x2 matrix
     dplyr::group_by(t) %>%
     dplyr::summarise(estimate = link_fun(sum(ice_t * freq_w) / sum(freq_w)) - link_fun(sum(ice_s * freq_w) / sum(freq_w)))
 
-  return ( df )
+  return ( df$estimate )
 }
