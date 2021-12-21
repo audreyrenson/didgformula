@@ -7,6 +7,15 @@ check_link_function <- function(link_fun) {
   }
 }
 
+#' Add time dummy variables to a long dataset with a numeric time variable
+#'
+#' @param df long dataset
+#' @param timevar chr. Name of column containing times.
+#'
+#' @return data frame with additional columns {timevar}{n} for all unique(n) in df[[timevar]].
+#' @export
+#'
+#' @examples
 make_time_dummies <- function(df, timevar) {
 
   new_timevars = paste0(timevar, min(df[[timevar]]):max(df[[timevar]]))
