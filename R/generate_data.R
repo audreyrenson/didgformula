@@ -27,15 +27,16 @@ generate_data <- function(N,
 
   #what variables does each variable depend on?
   vars_L = function(t) c('intercept', if(t<1 | potential_outcomes) 'zeros' else glue::glue('A{t-1}'))
-  vars_A = function(t) c('intercept', 'U0', glue::glue('L{t}'))
-  vars_Y = function(t) c('intercept', 'U0', glue::glue('L{t}'), if(potential_outcomes) 'zeros' else glue::glue('A{t}'), glue::glue('U0timesL{t}'))
+  vars_W = function(t) c('intercept', if(t<1 | potential_outcomes) 'zeros' else glue::glue('A{t-1}'))
+  vars_A = function(t) c('intercept', 'U0', glue::glue('L{t}'), glue('W{t}'), glue('W{t}squared'))
+  vars_Y = function(t) c('intercept', 'U0', glue::glue('L{t}'), glue('W{t}'), glue('W{t}squared'), if(potential_outcomes) 'zeros' else glue::glue('A{t}'))
 
 
   for(t in 0:Tt) {
     df[[glue::glue('L{t}')]] = rbinom_logit(X=df[vars_L(t)], Beta=Beta$L[t+1, ], N=N)
-    df[[glue::glue('U0timesL{t}')]] = df[[glue::glue('L{t}')]] * df$U0
-
-    if (t<1) {
+    df[[glue::glue('W{t}')]] = rnorm_identity(X=df[vars_W(t)], Beta=Beta$W[t+1, ], N=N)
+    df[[glue::glue('W{t}squared')]] = df[[glue::glue('W{t}')]]^2
+    if (t==0) {
       df[[glue::glue('A{t}')]] = 0
     } else {
       df[[glue::glue('A{t}')]] = rbinom_logit(X=df[vars_A(t)], Beta=Beta$A[t+1, ], N=N)^(1 - df[[glue::glue('A{t-1}')]] == 1) #monotonic treatment assignment
@@ -43,7 +44,7 @@ generate_data <- function(N,
   }
 
   df = cbind(df, simulate_y(df=df, Tt=Tt, vars_Y=vars_Y, Beta_Y=Beta$Y, ylink=ylink, binomial_n=binomial_n))
-  df = df[, -grep( c('intercept|zeros|U0times'), names(df))]
+  df = df[, -grep( c('intercept|zeros|squared'), names(df))]
 
   if(length(binomial_n) > 1) df$binomial_n = binomial_n
 
@@ -67,6 +68,7 @@ pivot_longer_gendata = function(df_wide) {
 
 # generate data from a binomial distribution based on a linear-logistic model
 rbinom_logit <- function(X, Beta, N, n=1) rbinom(n=N, p=plogis(as.matrix(X) %*% Beta), size=n)
+rnorm_identity <- function(X, Beta, N, sd=1) rnorm(n=N, mean =as.matrix(X) %*% Beta, sd=sd)
 
 simulate_y <- function(df, Tt, vars_Y, Beta_Y,
                        ylink='rnorm_identity', binomial_n, ...) {

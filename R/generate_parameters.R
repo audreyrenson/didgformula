@@ -17,49 +17,47 @@
 #'
 #'
 #' @examples
-generate_parameters <- function(Tt, mu_Beta_L=0.2, mu_Beta_A=0.2,
-                                mu_Beta_Y=0.2, sd_Beta_L=0.2, sd_Beta_A=0.2,
-                                sd_Beta_Y=0.2, range_ymeans = c(-5, 5),
-                                constant_dydu = 0.1, check_CDF=FALSE, check_rbinom_identity=FALSE) {
+generate_parameters <- function(Tt,
+                                mu_Beta_L=0.2, mu_Beta_W=0.2, mu_Beta_A=0.2, mu_Beta_Y=0.2,
+                                sd_Beta_L=0.2, sd_Beta_W=0.2, sd_Beta_A=0.2, sd_Beta_Y=0.2,
+                                range_ymeans = c(-5, 5),
+                                constant_dydu = 0.1,
+                                check_CDF=FALSE,
+                                check_rbinom_identity=FALSE) {
 
   Beta_U = -log(1 / 0.5 - 1)
   mean_U = plogis(Beta_U)
 
   # matrices of parameters
   Beta_L = matrix( rnorm(n = 2*(Tt+1), mean =mu_Beta_L, sd = sd_Beta_L), nrow = Tt + 1)# 2 because terms for A + intercept
-  Beta_A = matrix( rnorm(n = 3*(Tt+1), mean =mu_Beta_A, sd = sd_Beta_A), nrow = Tt + 1)# 3 because terms for U, L + intercept
-  Beta_Y = matrix( rnorm(n = 5*(Tt+1), mean =mu_Beta_Y, sd = sd_Beta_Y), nrow = Tt + 1)# 5 because terms for U, L, A, U*L + intercept
+  Beta_W = matrix( rnorm(n = 2*(Tt+1), mean =mu_Beta_W, sd = sd_Beta_W), nrow = Tt + 1)# 2 because terms for A + intercept
+  Beta_A = matrix( rnorm(n = 5*(Tt+1), mean =mu_Beta_A, sd = sd_Beta_A), nrow = Tt + 1)# 5 because terms for U, L, W, W^2, + intercept
+  Beta_Y = matrix( rnorm(n = 6*(Tt+1), mean =mu_Beta_Y, sd = sd_Beta_Y), nrow = Tt + 1)# 6 because terms for U, L, W, W^2, A + intercept
 
-  Beta_Y = fix_dydu(Beta_Y, constant_dydu) #constant effect of U0 = part of parallel trends
+  Beta_Y[,2] = constant_dydu #constant effect of U0 = part of parallel trends
 
   # balancing intercepts
   mean_Y = runif(Tt + 1, min = range_ymeans[1], max = range_ymeans[2])
   mean_L = runif(Tt + 1, min = 0.1, max = 0.5)
+  mean_W = 0
   mean_A_conditional = runif(Tt + 1, min = 1/(Tt^2), max = 1/(Tt^2) + 1/Tt) # this is a function of T to avoid very small pr(A_t=0) for large t
   mean_A_marginal = 1 - cumprod(1 - mean_A_conditional)  # basically a kaplan meier risk function
 
-  Beta_Y[, 1] = mean_Y - Beta_Y[, 2]*mean_U - Beta_Y[, 3]*mean_L - Beta_Y[,4]*mean_A_marginal - Beta_Y[,5]*mean_U*mean_L #last piece only works for binary independent  L & U
+  Beta_Y[, 1] = mean_Y - Beta_Y[, 2]*mean_U - Beta_Y[, 3]*mean_L - Beta_Y[,4]*mean_W - Beta_Y[,5]*mean_W - Beta_Y[,6]*mean_A_marginal
   Beta_A[, 1] = -log(1 / mean_A_conditional - 1) - Beta_A[, 2]*mean_U - Beta_A[, 3]*mean_L
   Beta_L[, 1] = -log(1 / mean_L - 1) - Beta_L[, 2]*mean_A_marginal #fix - should depend on At-1 not At
+  Beta_W[, 1] = mean_W - Beta_W[, 2]*mean_A_marginal #fix - should depend on At-1 not At
 
-  colnames(Beta_Y) = c('intercept', 'U0', 'Lt', 'At', 'LtU0')
-  colnames(Beta_A) = c('intercept', 'U0', 'Lt')
-  colnames(Beta_L) = c('intercept', 'At-1')
+  colnames(Beta_Y) = c('intercept', 'U0', 'Lt', 'Wt','Wt^2','At')
+  colnames(Beta_A) = c('intercept', 'U0', 'Lt', 'Wt','Wt^2')
+  colnames(Beta_L) = colnames(Beta_W) = c('intercept', 'At-1')
 
 
   if(check_CDF) check_cdf(Beta_Y)
   if(check_rbinom_identity) check_rbinom_identity(Beta_Y)
 
-  return ( list(U=Beta_U, L=Beta_L, A=Beta_A, Y=Beta_Y))
+  return ( list(U=Beta_U, L=Beta_L, W=Beta_W, A=Beta_A, Y=Beta_Y))
 
-}
-
-fix_dydu <- function(Beta_Y, constant_dydu) {
-
-    Beta_Y[, 2] = constant_dydu
-    Beta_Y[, 5] = 0
-
-    return ( Beta_Y )
 }
 
 check_cdf <- function(Beta_Y) {

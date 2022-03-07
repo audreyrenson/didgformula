@@ -7,9 +7,11 @@
 generate_parameters(
   Tt,
   mu_Beta_L = 0.2,
+  mu_Beta_W = 0.2,
   mu_Beta_A = 0.2,
   mu_Beta_Y = 0.2,
   sd_Beta_L = 0.2,
+  sd_Beta_W = 0.2,
   sd_Beta_A = 0.2,
   sd_Beta_Y = 0.2,
   range_ymeans = c(-5, 5),
