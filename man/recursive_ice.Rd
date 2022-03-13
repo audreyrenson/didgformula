@@ -13,7 +13,9 @@ recursive_ice(
   outside_formula,
   inside_family,
   binomial_n = NULL,
-  models = TRUE
+  models = TRUE,
+  tmle = FALSE,
+  weights = NULL
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ recursive_ice(
 \item{binomial_n}{vector of length nrow(data) of group sizes if Y is binomial aggregate data}
 
 \item{models}{lgl. Return all models as an attribute?}
+
+\item{tmle}{lgl. Incorporate tmle updating step to make estimator doubly robust?}
+
+\item{weights}{Matrix of IPTW weights as returned by \code{cbind(1, calc_weights(...))}. Default \code{NULL}, required if \code{tmle=TRUE}.}
 }
 \value{
 

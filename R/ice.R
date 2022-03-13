@@ -81,13 +81,17 @@ fit_outer_exp_model <- function(k, data, preds, rhs_formula, binomial_n=NULL) {
 #' @param inside_family stats::families object (or chr) for glm inside models
 #' @param binomial_n vector of length nrow(data) of group sizes if Y is binomial aggregate data
 #' @param models lgl. Return all models as an attribute?
+#' @param tmle lgl. Incorporate tmle updating step to make estimator doubly robust?
+#' @param weights Matrix of IPTW weights as returned by `cbind(1, calc_weights(...))`. Default `NULL`, required if `tmle=TRUE`.
 #'
 #' @return
 #' @export
 #'
 #' @examples
 recursive_ice <- function(t, k, data, inside_formula_t, inside_formula_tmin1,
-                          outside_formula, inside_family, binomial_n=NULL, models=TRUE) {
+                          outside_formula, inside_family, binomial_n=NULL, models=TRUE,
+                          tmle=FALSE, weights=NULL) {
+
 
   if(k==t) {
     two_models = fit_two_outcome_models(t=k, data=data,
@@ -95,34 +99,71 @@ recursive_ice <- function(t, k, data, inside_formula_t, inside_formula_tmin1,
                                         rhs_formula_tmin1 = inside_formula_tmin1,
                                         family=inside_family,
                                         binomial_n)
-    predictions = sapply(two_models, predict, newdata=data, type='response', simplify=TRUE)
+    preds_k = sapply(two_models, predict, newdata=data, type='response', simplify=TRUE)
 
-    if(models)  attr(predictions, 'models') = list(two_models)
+    if(tmle) {
+      if(is.null(weights)) stop('must supply weights if tmle=TRUE')
+      preds_k[,1] = tmle_update(preds_k[,1],
+                                y=data[[glue('Y{t-1}')]],
+                                w=weights[,k+1],
+                                subset = data[[glue('A{t}')]]==0,
+                                family=inside_family)
+      preds_k[,2] = tmle_update(preds_k[,2],
+                                y=data[[glue('Y{t}')]],
+                                w=weights[,k+1],
+                                subset = data[[glue('A{t}')]]==0,
+                                family=inside_family)
+    }
 
-    return (  predictions )
+    if(models)  attr(preds_k, 'models') = list(two_models)
+
+    return (  preds_k )
   } else {
-    preds = recursive_ice(t,
-                          k+1,
-                          data,
-                          inside_formula_t,
-                          inside_formula_tmin1,
-                          outside_formula,
-                          inside_family,
-                          binomial_n)
+    preds_kplus1 = recursive_ice(t,
+                                 k+1,
+                                 data,
+                                 inside_formula_t,
+                                 inside_formula_tmin1,
+                                 outside_formula,
+                                 inside_family,
+                                 binomial_n,
+                                 models,
+                                 tmle,
+                                 weights)
 
-    two_models = lapply(1:2, function(h)  fit_outer_exp_model(k, data, preds[,h], outside_formula, binomial_n))
-    predictions = sapply(two_models, predict, newdata=data, simplify=TRUE)
+    two_models = lapply(1:2, function(h)  fit_outer_exp_model(k, data, preds_kplus1[,h], outside_formula, binomial_n))
+    preds_k = sapply(two_models, predict, newdata=data, simplify=TRUE)
 
-    if(models) {
-      names(two_models) = c('tmin1','t')
-      attr(predictions, 'models') = c(attr(preds,'models'), list(two_models))
-      names(attr(predictions, 'models')) = paste0('n_nested', 0:(t-k))
+    if(tmle) {
+      preds_k[,1] = tmle_update(preds_k[,1],
+                                y=preds_kplus1[,1],
+                                w=weights[,k+1],
+                                subset = data[[glue('A{k}')]]==0,
+                                family=inside_family)
+      preds_k[,2] = tmle_update(preds_k[,2],
+                                y=preds_kplus1[,2],
+                                w=weights[,k+1],
+                                subset = data[[glue('A{k}')]]==0,
+                                family=inside_family)
     }
 
 
-    return ( predictions )
+    if(models) {
+      names(two_models) = c('tmin1','t')
+      attr(preds_k, 'models') = c(attr(preds_kplus1,'models'), list(two_models))
+      names(attr(preds_k, 'models')) = paste0('n_nested', 0:(t-k))
+    }
+
+
+    return ( preds_k )
   }
 }
+
+tmle_update <- function(preds, y, w, family, subset) {
+  df = tibble(y,preds,w)
+  pr = predict(glm(y ~ offset(preds), family=family, weights=w, data=df[subset, ]), newdata=df)
+}
+
 
 estimate_ice <- function(ice_preds,  # Nx2 matrix
                          link_fun,
@@ -152,6 +193,8 @@ estimate_ice <- function(ice_preds,  # Nx2 matrix
 #' @param pt_link_fun function. The scale on which parallel trends is assumed (e.g., `qlogis` for logit scale). Default `NULL` for untransformed scale.
 #' @param tibble logical. return results as a tibble (TRUE) or vector (FALSE)?
 #' @param models logical. Return all models as an attribute?
+#' @param tmle lgl. Incorporate tmle updating step to make estimator doubly robust?
+#' @param weights Matrix of IPTW weights as returned by `cbind(1, calc_weights(...))`. Default `NULL`, required if `tmle=TRUE`.
 #'
 #' @return
 #' @export
@@ -166,7 +209,9 @@ ice_pipeline <- function(data,
                          pt_link_fun=NULL,
                          binomial_n=NULL,
                          tibble=TRUE,
-                         models=TRUE) {
+                         models=TRUE,
+                         tmle=FALSE,
+                         weights=NULL) {
 
   ice_preds = lapply(1:Tt, function(t) recursive_ice(t, k=0,
                                                      data=data,
@@ -174,7 +219,10 @@ ice_pipeline <- function(data,
                                                      inside_formula_tmin1=inside_formula_tmin1,
                                                      outside_formula=outside_formula,
                                                      inside_family=inside_family,
-                                                     binomial_n=binomial_n))
+                                                     binomial_n=binomial_n,
+                                                     models=models,
+                                                     tmle=tmle,
+                                                     weights=weights))
 
   ice_estimates = sapply(ice_preds, estimate_ice, link_fun=pt_link_fun, binomial_n)
 
