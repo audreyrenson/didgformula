@@ -22,17 +22,16 @@ generate_parameters <- function(Tt,
                                 sd_Beta_L=0.2, sd_Beta_W=0.2, sd_Beta_A=0.2, sd_Beta_Y=0.2,
                                 range_ymeans = c(-5, 5),
                                 constant_dydu = 0.1,
-                                check_CDF=FALSE,
-                                check_rbinom_identity=FALSE) {
+                                check_CDF=FALSE) {
 
   Beta_U = -log(1 / 0.5 - 1)
   mean_U = plogis(Beta_U)
 
   # matrices of parameters
-  Beta_L = matrix( rnorm(n = 2*(Tt+1), mean =mu_Beta_L, sd = sd_Beta_L), nrow = Tt + 1)# 2 because terms for A + intercept
-  Beta_W = matrix( rnorm(n = 2*(Tt+1), mean =mu_Beta_W, sd = sd_Beta_W), nrow = Tt + 1)# 2 because terms for A + intercept
-  Beta_A = matrix( rnorm(n = 5*(Tt+1), mean =mu_Beta_A, sd = sd_Beta_A), nrow = Tt + 1)# 5 because terms for U, L, W, W^2, + intercept
-  Beta_Y = matrix( rnorm(n = 6*(Tt+1), mean =mu_Beta_Y, sd = sd_Beta_Y), nrow = Tt + 1)# 6 because terms for U, L, W, W^2, A + intercept
+  Beta_L = matrix( rnorm(n = 2*(Tt+1), mean =mu_Beta_L, sd = sd_Beta_L), nrow = Tt + 1, byrow = TRUE)# 2 because terms for A + intercept
+  Beta_W = matrix( rnorm(n = 2*(Tt+1), mean =mu_Beta_W, sd = sd_Beta_W), nrow = Tt + 1, byrow = TRUE)# 2 because terms for A + intercept
+  Beta_A = matrix( rnorm(n = 5*(Tt+1), mean =mu_Beta_A, sd = sd_Beta_A), nrow = Tt + 1, byrow = TRUE)# 5 because terms for U, L, W, W^2, + intercept
+  Beta_Y = matrix( rnorm(n = 6*(Tt+1), mean =mu_Beta_Y, sd = sd_Beta_Y), nrow = Tt + 1, byrow = TRUE)# 6 because terms for U, L, W, W^2, A + intercept
 
   Beta_Y[,2] = constant_dydu #constant effect of U0 = part of parallel trends
 
@@ -54,7 +53,6 @@ generate_parameters <- function(Tt,
 
 
   if(check_CDF) check_cdf(Beta_Y)
-  if(check_rbinom_identity) check_rbinom_identity(Beta_Y)
 
   return ( list(U=Beta_U, L=Beta_L, W=Beta_W, A=Beta_A, Y=Beta_Y))
 
