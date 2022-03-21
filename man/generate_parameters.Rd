@@ -16,8 +16,7 @@ generate_parameters(
   sd_Beta_Y = 0.2,
   range_ymeans = c(-5, 5),
   constant_dydu = 0.1,
-  check_CDF = FALSE,
-  check_rbinom_identity = FALSE
+  check_CDF = FALSE
 )
 }
 \arguments{
