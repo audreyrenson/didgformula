@@ -2,7 +2,10 @@ test_that("data dimensions are correct", {
 
   N = 1e3
   Tt = 10
-  Beta = generate_parameters(Tt=Tt, range_ymeans=qlogis(c(0.01, 0.05)))
+  Beta = generate_parameters(Tt=Tt, range_ymeans=qlogis(c(0.01, 0.05)),
+                             #the additional confounder W makes hazards too unstable - this makes W completely independent. Would need a better solution to finding the hazard parameters
+                             mu_Beta_Y = c(.2,.2,.2,0,0,.2), sd_Beta_Y = c(.2,.2,.2,0,0,.2),
+                             mu_Beta_A = c(.2,.2,.2,0,0), sd_Beta_A = c(.2,.2,.2,0,0))
 
   correct_dimensions <- c(N, 4*(Tt+1) + 2) # Tt+1 periods of 4 variables (Lt,Wt,At,Yt), plus U0 and uid
 

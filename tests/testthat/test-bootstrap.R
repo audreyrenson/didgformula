@@ -1,11 +1,14 @@
 test_that("bootstrap_se returns results", {
-  set.seed(143) #always show the computer some love
+  set.seed(173)
 
   Tt = 4
   N = 100
+  Beta = generate_parameters(Tt = Tt,
+                             mu_Beta_Y = c(.2,.2,.2,0,0,.2), sd_Beta_Y = c(.2,.2,.2,0,0,.2),
+                             mu_Beta_A = c(.2,.2,.2,0,0), sd_Beta_A = c(.2,.2,.2,0,0))
   df = generate_data(N = N,
                      Tt = Tt,
-                     Beta = generate_parameters(Tt = 4))
+                     Beta = Beta)
 
   boot_iptw = bootstrap_se(
     data = df,
