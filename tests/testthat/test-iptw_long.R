@@ -1,6 +1,6 @@
 test_that("iptw_long returns same results as iptw", {
 
-  set.seed(87)
+  set.seed(187)
   Tt=5
   Beta = generate_parameters(Tt=Tt)
 
