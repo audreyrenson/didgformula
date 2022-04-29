@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
 library(didgformula)
 library(tidyverse)
 library(splines)
+library(glue)
 theme_set(theme_minimal())
 
 ```
@@ -66,15 +67,15 @@ sah_mod = sah[sah$week >0, ]
 
 ## Estimation
 
-We focus on the interated conditional estimator (ICE) as a primary analysis, and use inverse-probability-of-treatment-weighted estimators as a check on model specification. The two estimators model different parts of the joint distribution of the data, so a disagreement between them (in expectation) indicates model misspecification somewhere (though agreement does not guarantee correct models). We attempt to fit reasonably flexible (e.g., splines, interaction terms) models to the extent possible given the data constraints.
+Here we estimate the counterfactual rates using three estimators, the interated conditional expectation (ICE) estimator based on outcome modeling, the inverse-probability-of-treatment-weighted (IPTW) estimator based on treatment modeling, and the targeted maximum likelihood estimator (TMLE) that combines the two and is doubly robust. We attempt to fit reasonably flexible (e.g., splines, interaction terms) models for the outcome and treatment to the extent possible given the data constraints.
 
-Note that we specify the estimators to assume parallel trends on the logit scale using the argument `pt_link_fun=qlogis`, pass `R`'s native logit function `qlogis`. That is, we assume:
+Note that we specify the estimators to assume parallel trends on the additive scale, which is the default in `*_pipeline()` functions in `didgformula` (other scales are available by passing a function to the argument `pt_link_fun`). That is, we assume:
 
 $$
-\text{logit }\mathbb{E}[Y_t(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k] - \text{logit }\mathbb{E}[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\\
-=\text{logit }\mathbb{E}[Y_t(\bar a)|\bar A_k=\bar a_k, \bar L_k] - \text{logit }\mathbb{E}[Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar L_k]
+\mathbb{E}[Y_t(\bar a)-Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar W_k] - \text{logit }\mathbb{E}[Y_{t-1}(\bar a)|\bar A_{k-1}=\bar a_{k-1}, \bar L_k]\\
+=\mathbb{E}[Y_t(\bar a)-Y_{t-1}(\bar a)|\bar A_k=\bar a_k, \bar W_k]
 $$
-for $k=1,...,t$, with $\text{logit}(x)=\log(x/[1-x])$. In this example, we consider $L$ to be the number of new cases of COVID-19 in the state in the previous week. For simplicity we also assume that $\mathbb E[Y_t|\bar A_t, \bar L_t]=\mathbb E[Y_t|\bar A_t, L_t]$, or that the outcome model only depends on the most recent values of $L$. This simplifies outcome modeling for the sake of exposition, but we may not want to assume this in realistic applications.
+for $k=1,...,t$. In this example, we consider $W$ to be the percentage growth in new cases of COVID-19 in the state in the previous week. For simplicity we also assume that $\mathbb E[Y_t|\bar A_t, \bar W_t]=\mathbb E[Y_t|\bar A_t, W_t]$, or that the outcome model only depends on the most recent values of $W$. This simplifies outcome modeling for the sake of exposition, but we may not want to assume this in realistic applications.
 
 
 ```{r estimation}
@@ -87,6 +88,21 @@ intervene = function(df_obs) {
 # convenience function for "positive part" of a variable, useful for keeping non-degenerative parts of time*exposure interaction terms
 pos <- function(x) ifelse(x<0, 0, x)
 
+# append IPTW weights to the dataset for use in TMLE
+sah_mod$w0 = 1/( 1 - predict(glm(open ~ ns(week, df=3) + log(case_gr), data= sah_mod[sah_mod$open_lag==0, ], family=binomial), newdata=sah_mod, type='response'))
+sah_mod$w0 = sah_mod %>% group_by(state) %>% mutate(w0 = cumprod(w0)) %>% pull(w0)
+for(n in 1:11) {
+  sah_mod[[glue('w{n}')]] = sah_mod %>% group_by(state) %>% mutate(w = lag(.data[[glue('w{n-1}')]])) %>% pull(w)
+}
+
+#currently, tmle needs to subset by vars A_lag{n} so we append these
+sah_mod <- sah_mod %>%
+  mutate(A=open) %>%
+  group_by(state) %>%
+  append_lags(11, 'A', default=NA) %>%
+  ungroup()
+
+
 ice_estimate = ice_pipeline_long(df_obs = sah_mod,
                                  df_interv = intervene(sah_mod),
                                  inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr) + week_by_open ',
@@ -96,7 +112,7 @@ ice_estimate = ice_pipeline_long(df_obs = sah_mod,
                                  t_col = sah_mod$week,
                                  n_nested = 7,
                                  inside_family = binomial,
-                                 pt_link_fun = qlogis,
+                                 pt_link_fun = NULL,
                                  binomial_n = sah_mod$pop)
 
 iptw_estimate = iptw_pipeline_long(df_obs = sah_mod,
@@ -108,19 +124,32 @@ iptw_estimate = iptw_pipeline_long(df_obs = sah_mod,
                                    ylagvar = 'mort_lag',
                                    idvar='state',
                                    timevar = 'week',
-                                   pt_link_fun = qlogis,
+                                   pt_link_fun = NULL,
                                    binomial_n = sah_mod$pop)
+
+tmle_estimate = ice_pipeline_long(df_obs = sah_mod,
+                                 df_interv = intervene(sah_mod),
+                                 inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr) + week_by_open ',
+                                 inside_formula_tmin1 = 'mort_bin_lag ~ ns(week, df=3) + lag(case_gr) + week_by_open ',
+                                 outside_formula = 'preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_lag{n}) + week_by_open_lag{n}',
+                                 Tt = 11,
+                                 t_col = sah_mod$week,
+                                 n_nested = 7,
+                                 inside_family = binomial,
+                                 pt_link_fun = NULL,
+                                 binomial_n = sah_mod$pop,
+                                 tmle = TRUE,
+                                 weights = 'w{n}')
 ice_estimate
-
 iptw_estimate
-
+tmle_estimate
 ```
 
 Under the stated assumptions, the estimator pipelines return estimates of 
 $$
-g(\mathbb{E}[Y_t(\bar a)]) - g(\mathbb{E}[Y_{t-1}(\bar a)])
+\mathbb{E}[Y_t(\bar a)-Y_{t-1}(\bar a)]
 $$
-where $g(\cdot)$ is the parallel trends link function. Since the method only helps identify counterfactual *trends* (i.e. differences over time), it is our responsibility to combine these with quantities that identify counterfactual *levels* to arrive at estimates for the parameter of interest. In the current setting, the whole population represented in the dataset (i.e., the 43 states that ever implemented stay-at-home orders) began follow up with exposure at the intervened status (i.e. under stay-at-home order), which means that by causal consistency,
+Since the method only helps identify counterfactual *trends* (i.e. differences over time), it is our responsibility to combine these with quantities that identify counterfactual *levels* to arrive at estimates for the parameter of interest. In the current setting, the whole population represented in the dataset (i.e., the 43 states that ever implemented stay-at-home orders) began follow up with exposure at the intervened status (i.e. under stay-at-home order), which means that by causal consistency,
 
 $$
 \mathbb E[Y_0(\bar a)] = \mathbb E[Y_0]
@@ -128,44 +157,45 @@ $$
 
 Thus we can write the target parameter $E[Y_t(\bar a)]$ as
 $$
-\mathbb E[Y_t(\bar a)] = g^{-1} \bigg\{ g(\mathbb E[Y_0]) + \sum_{k=1}^t g(\mathbb{E}[Y_t(\bar a)]) - g(\mathbb{E}[Y_{t-1}(\bar a)]) \bigg\}
+\mathbb E[Y_t(\bar a)] = \mathbb E[Y_0] + \sum_{k=1}^t \mathbb{E}[Y_t(\bar a)-Y_{t-1}(\bar a)] 
 $$
 We substitute estimates (under the stated assumptions) of the above RHS quantities to estimate the target parameter:
 
 ```{r combining}
 
 
-gEY0 = sah %>%
+EY0 = sah %>%
   filter(week==0) %>%
-  summarise(gEY0 = qlogis(sum(mort)/sum(pop))) %>%
+  summarise(EY0 = sum(mort)/sum(pop)) %>%
   pull()
 
 
-make_rates = function(estimates, gEY0) {
+make_rates = function(estimates, EY0) {
   estimates %>% tibble::add_row(t=0, estimate=0, .before=1) %>%
-    mutate(estimate = plogis( gEY0 + cumsum(estimate) ))
+    mutate(estimate = EY0 + cumsum(estimate) )
 }
 
-combine_estimates(iptw = iptw_estimate %>% make_rates(gEY0),
-                  ice  = ice_estimate %>% make_rates(gEY0), Tt=11)
+combine_estimates(iptw = iptw_estimate %>% make_rates(EY0),
+                  ice  = ice_estimate %>% make_rates(EY0), Tt=11) %>%
+  left_join(make_rates(tmle_estimate, EY0) %>% rename(tmle=estimate))
 
 
 ```
-Rate estimates are reasonably similar between the two estimators, though it is clear the ICE estimates are smoother owing to the parametric (spline) form of the outcome models. To better interpret those counterfactual rate estimates, we convert them to death counts and compare them to the observed death counts:
+Rate estimates are reasonably similar between the three estimators, though it is clear the ICE and TMLE estimates are smoother owing to the parametric (spline) form of the outcome models. To better interpret those counterfactual rate estimates, we convert them to death counts and compare them to the observed death counts:
 ```{r compare_counts}
 
 
-make_death_counts = function(estimates, gEY0, pop) {
-  estimates %>% make_rates(gEY0) %>% mutate(deaths = estimate * pop) %>% select(t, deaths)
+make_death_counts = function(estimates, EY0, pop) {
+  estimates %>% make_rates(EY0) %>% mutate(deaths = estimate * pop) %>% select(t, deaths)
 }
 
 make_lives_saved = function(estimates, data) {
-  gEY0 = data %>%
+  EY0 = data %>%
     filter(week==0) %>%
-    summarise(gEY0 = qlogis(sum(mort)/sum(pop))) %>%
+    summarise(EY0 = sum(mort)/sum(pop)) %>%
     pull()
 
-  counterfactual_deaths = make_death_counts(estimates, gEY0, pop=sum(data$pop[data$week==0])) %>% pull(deaths) %>% sum()
+  counterfactual_deaths = make_death_counts(estimates, EY0, pop=sum(data$pop[data$week==0])) %>% pull(deaths) %>% sum()
   factual_deaths = sum(data$mort)
 
   factual_deaths - counterfactual_deaths
@@ -173,6 +203,7 @@ make_lives_saved = function(estimates, data) {
 
 make_lives_saved(ice_estimate, sah)
 make_lives_saved(iptw_estimate, sah)
+make_lives_saved(tmle_estimate, sah)
 ```
 ## Bootstrap confidence intervals
 
@@ -189,19 +220,32 @@ obs_pipeline <- function(data) {
   data %>%
     filter(week>0) %>%
     group_by(t=week) %>%
-    summarise(estimate = qlogis( sum(mort)/sum(pop)) - qlogis( sum(mort_lag) / sum(pop) ))
+    summarise(estimate = sum(mort)/sum(pop) - sum(mort_lag) / sum(pop) )
 }
+
 
 # bootstrap based on iid sampling -----------------------------------------
 
 #add 'censored' observations - this is used in bootstrapping the aggregate data
 boot_template = sah %>%
+  mutate(A=open) %>%
+  group_by(state) %>%
+  append_lags(11, 'A', default=NA) %>%
+  ungroup() %>%
   bind_rows(sah %>%
               group_by(state, pop) %>%
               summarise(mort =  max(pop) - sum(mort)) %>%
               mutate(week = 12)) %>% #just have to remember that 12=never)
   arrange(state, week)
 
+boot_append_weights = function(df) {
+  df$w0 = 1/( 1 - predict(glm(open ~ ns(week, df=3) + log(case_gr), data= df[df$open_lag==0, ], family=binomial), newdata=df, type='response'))
+  df$w0 = df %>% group_by(state) %>% mutate(w0 = cumprod(w0)) %>% pull(w0)
+  for(n in 1:11) {
+    df[[glue('w{n}')]] = df %>% group_by(state) %>% mutate(w = lag(.data[[glue('w{n-1}')]])) %>% pull(w)
+  }
+  df
+}
 
 boot_agg = tibble(rep = 1:R) %>%
   mutate(data = map(rep, ~boot_template %>% #bootstrap the data with the 'censored' row
@@ -213,7 +257,7 @@ boot_agg = tibble(rep = 1:R) %>%
                              mort_bin_lag = cbind(mort_lag, pop)) %>%
                       ungroup() %>%
                       filter(week < 12)),
-         mod_data = map(data, filter, week>0),
+         mod_data = map(data, filter, week>0) %>% map(boot_append_weights),
          iptw = map(mod_data, ~iptw_pipeline_long(df_obs = .,
                                                   df_interv = intervene(.),
                                                   den_formula = 'open ~ ns(week, df=3) + log(case_gr)*open_lag',
@@ -223,7 +267,7 @@ boot_agg = tibble(rep = 1:R) %>%
                                                   ylagvar = 'mort_lag',
                                                   idvar='state',
                                                   timevar = 'week',
-                                                  pt_link_fun = qlogis,
+                                                  pt_link_fun = NULL,
                                                   binomial_n = .$pop)),
          ice = map(mod_data, ~ice_pipeline_long(df_obs = .,
                                                 df_interv = intervene(.),
@@ -234,15 +278,27 @@ boot_agg = tibble(rep = 1:R) %>%
                                                 t_col = .$week,
                                                 n_nested = 7,
                                                 inside_family = binomial,
-                                                pt_link_fun = qlogis,
+                                                pt_link_fun = NULL,
                                                 binomial_n = .$pop)),
+         tmle = map(mod_data, ~ice_pipeline_long(df_obs = .,
+                                                df_interv = intervene(.),
+                                                inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr) + week_by_open ',
+                                                inside_formula_tmin1 = 'mort_bin_lag ~ ns(week, df=3) + lag(case_gr) + week_by_open ',
+                                                outside_formula = 'preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_lag{n}) + week_by_open_lag{n}',
+                                                Tt = 11,
+                                                t_col = .$week,
+                                                n_nested = 7,
+                                                inside_family = binomial,
+                                                pt_link_fun = NULL,
+                                                binomial_n = .$pop,
+                                                tmle=TRUE, weights='w{n}')),
          obs = map(mod_data, obs_pipeline))
 
 #calculate standard errors for the relevant quantities
 boot_ses = boot_agg %>%
   pivot_longer(iptw:obs, names_to='method') %>%
-  mutate(gEY0 = map(data, ~with(.[.$week==0, ], qlogis(sum(mort)/sum(pop)))),
-         rates = map2(value, gEY0, make_rates),
+  mutate(EY0 = map(data, ~with(.[.$week==0, ], sum(mort)/sum(pop))),
+         rates = map2(value, EY0, make_rates),
          lives = map2_dbl(value, data, make_lives_saved)) %>%
   unnest(rates) %>%
   group_by(t, method) %>%
@@ -258,8 +314,8 @@ boot_ses = boot_agg %>%
 Estimate the numer of lives saved with 95% confidence intervals:
 ```{r lives_estimates}
 
-lives_estimates_se = tibble(method = c('iptw','ice'),
-                            lives = sapply(list(iptw_estimate, ice_estimate),
+lives_estimates_se = tibble(method = c('iptw','ice','tmle'),
+                            lives = sapply(list(iptw_estimate, ice_estimate, tmle_estimate),
                                            make_lives_saved, sah)) %>%
   left_join(boot_ses %>% ungroup() %>% filter(method != 'obs') %>% select(method, se=lives_se) %>% unique()) %>%
   mutate(lwr = lives - 1.96*se, upr = lives + 1.96*se)
@@ -268,13 +324,14 @@ lives_estimates_se = tibble(method = c('iptw','ice'),
 lives_estimates_se
 ```
 
-Clearly the IPTW estimator is far less precise in this example. We can visualize the estimated rates as follows:
+Clearly the IPTW estimator is far less precise than the other two estimators in this example. We can visualize the estimated rates as follows:
 
 ```{r fig.width=6, fig.height=4}
 df_figure = list(ice=ice_estimate,
                  iptw=iptw_estimate,
+                 tmle=tmle_estimate,
                  obs = obs_pipeline(sah)) %>%
-  map(make_rates, gEY0) %>%
+  map(make_rates, EY0) %>%
   bind_rows(.id='method')  %>%
   left_join(boot_ses %>% select(method, t, se=rate_se)) %>%
   mutate(lwr = estimate - 1.96*se, upr = estimate+1.96*se)
@@ -283,8 +340,11 @@ df_figure %>%
   mutate(across(estimate:upr, ~.*1e5),
          Estimator = case_when(method == 'ice' ~'Iterated conditional',
                                method == 'iptw' ~'Inverse probability weighted',
+                               method == 'tmle'~'Targeted maximum likelihood',
                                method == 'obs' ~ 'Observed rates')) %>%
-  ggplot(aes(x=t, y=estimate, ymin=lwr, ymax=upr, color=Estimator, fill=Estimator)) +
+  mutate(Estimator = fct_reorder(Estimator, .x = 1*(Estimator != 'Observed rates'))) %>%
+  ggplot(aes(x=t, y=estimate, ymin=lwr, ymax=upr, 
+             color=Estimator, fill=Estimator)) +
   geom_line() +
   geom_ribbon(alpha=0.2) +
   theme(legend.position = c(1,1), legend.justification = c(1,1)) +
