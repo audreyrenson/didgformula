@@ -14,7 +14,9 @@ ice_pipeline(
   pt_link_fun = NULL,
   binomial_n = NULL,
   tibble = TRUE,
-  models = TRUE
+  models = TRUE,
+  tmle = FALSE,
+  weights = NULL
 )
 }
 \arguments{
@@ -37,6 +39,10 @@ ice_pipeline(
 \item{tibble}{logical. return results as a tibble (TRUE) or vector (FALSE)?}
 
 \item{models}{logical. Return all models as an attribute?}
+
+\item{tmle}{lgl. Incorporate tmle updating step to make estimator doubly robust?}
+
+\item{weights}{Matrix of IPTW weights as returned by \code{cbind(1, calc_weights(...))}. Default \code{NULL}, required if \code{tmle=TRUE}.}
 }
 \value{
 

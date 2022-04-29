@@ -28,7 +28,9 @@ ice_pipeline_long <- function(df_obs,
                               pt_link_fun=NULL,
                               binomial_n=NULL,
                               tibble=TRUE,
-                              models=TRUE) {
+                              models=TRUE,
+                              tmle=FALSE,
+                              weights=NULL) {
 
   ice_preds = recursive_ice_long(Tt=Tt,
                                  n_nested=n_nested,
@@ -40,7 +42,9 @@ ice_pipeline_long <- function(df_obs,
                                  inside_family=inside_family,
                                  t_col = t_col,
                                  binomial_n = binomial_n,
-                                 models=models)
+                                 models=models,
+                                 tmle=tmle,
+                                 weights=weights)
 
   ice_estimates = estimate_ice_long(ice_preds, t_col, pt_link_fun, binomial_n)
 
@@ -96,51 +100,75 @@ recursive_ice_long <- function(Tt,
                                inside_family,
                                t_col,
                                binomial_n=NULL,
-                               models=TRUE) {
+                               models=TRUE,
+                               tmle=FALSE,
+                               weights=NULL) {
 
   tvars = attr(df_obs, 'timevars')
   tvars = paste0('(', paste( tvars[max(1, n_nested) : length(tvars)] , collapse='+'), ')') #this is like (t{n} + t{n+1} + ... + t{Tt}) for referencing formulas
+
+  n = n_nested #for convenience, allow user to specify formulas with x{n} where {n} is shorthand for {n_nested}
 
   if(n_nested == 0) {
     two_models = fit_two_outcome_models_long(data=df_obs,
                                              formula_t = glue(inside_formula_t),
                                              formula_tmin1 = glue(inside_formula_tmin1),
                                              family=inside_family)
-    predictions = sapply(two_models, predict, newdata=df_interv, type='response', simplify=TRUE)
+    preds_n = sapply(two_models, predict, newdata=df_interv, type='response', simplify=TRUE)
 
-    if(models) attr(predictions, 'models') = list(two_models)
+    if(tmle) {
+      if(is.null(weights)) stop("Must specify weights if tmle==TRUE")
+      for(s in c('tmin1','t')) {
+        preds_n[, s] = tmle_update(preds_n[, s],
+                                   y = df_obs$Y,
+                                   w = df_obs[[glue(weights)]],
+                                   family=gaussian,
+                                   subset=df_obs$A==0)
+      }
+    }
 
-    return (  predictions )
+    if(models) attr(preds_n, 'models') = list(two_models)
+
+    return (  preds_n )
   } else {
-    preds = recursive_ice_long(Tt,
-                               n_nested - 1,
-                               df_obs,
-                               df_interv,
-                               inside_formula_t,
-                               inside_formula_tmin1,
-                               outside_formula,
-                               inside_family,
-                               t_col,
-                               binomial_n,
-                               models)
+    preds_nmin1 = recursive_ice_long(Tt,
+                                     n_nested - 1,
+                                     df_obs,
+                                     df_interv,
+                                     inside_formula_t,
+                                     inside_formula_tmin1,
+                                     outside_formula,
+                                     inside_family,
+                                     t_col,
+                                     binomial_n,
+                                     models)
 
     obs_keep = t_col >= n_nested #we can only go outward n_nested expectations if that doesn't take us before time 0
-    n = n_nested #for convenience, allow user to specify formulas with x{n} where {n} is shorthand for {n_nested}
     formula_n = glue(outside_formula)
 
     two_models = list()
-    two_models[['tmin1']] = fit_outer_exp_model_long(n_nested, df_obs, preds[,1], formula_n, binomial_n, obs_keep)
-    two_models[['t']] = fit_outer_exp_model_long(n_nested, df_obs, preds[,2], formula_n, binomial_n, obs_keep)
+    two_models[['tmin1']] = fit_outer_exp_model_long(n_nested, df_obs, preds_nmin1[,1], formula_n, binomial_n, obs_keep)
+    two_models[['t']] = fit_outer_exp_model_long(n_nested, df_obs, preds_nmin1[,2], formula_n, binomial_n, obs_keep)
 
-    predictions = preds #carry outward for observations where t < n_nested
-    predictions[obs_keep, ] = sapply(two_models, predict, newdata=df_interv[obs_keep, ], simplify=TRUE)
+    preds_n = preds_nmin1 #carry outward for observations where t < n_nested
+    preds_n[obs_keep, ] = sapply(two_models, predict, newdata=df_interv[obs_keep, ], simplify=TRUE)
 
-    if(models) {
-      attr(predictions, 'models') = c(attr(predictions, 'models'), list(two_models))
-      names(attr(predictions, 'models')) = paste0('n_nested', 0:n_nested)
+    if(tmle) {
+      for(s in c('tmin1', 't')) {
+        preds_n[obs_keep, s] = tmle_update(preds  = preds_n[obs_keep, s, drop=TRUE],
+                                           y      = preds_nmin1[obs_keep, s, drop=TRUE],
+                                           w      = df_obs[obs_keep, glue(weights), drop=TRUE],
+                                           family = gaussian,
+                                           subset = df_obs[obs_keep, glue('A_lag{n}')]==0)
+      }
     }
 
-    return ( predictions )
+    if(models) {
+      attr(preds_n, 'models') = c(attr(preds_n, 'models'), list(two_models))
+      names(attr(preds_n, 'models')) = paste0('n_nested', 0:n_nested)
+    }
+
+    return ( preds_n )
   }
 }
 

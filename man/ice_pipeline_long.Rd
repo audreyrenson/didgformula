@@ -17,7 +17,9 @@ ice_pipeline_long(
   pt_link_fun = NULL,
   binomial_n = NULL,
   tibble = TRUE,
-  models = TRUE
+  models = TRUE,
+  tmle = FALSE,
+  weights = NULL
 )
 }
 \arguments{

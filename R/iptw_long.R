@@ -4,7 +4,7 @@ calc_inclusion_indicators_long <- function(df_obs, df_interv, idvar, timevar, ex
   df_obs[['A_interv']] = df_interv[[exposure]]
 
   df_obs %>%
-    group_by(.data[[idvar]]) %>%
+    dplyr::group_by(.data[[idvar]]) %>%
     dplyr::mutate(incl = cumprod(.data[[exposure]] == .data[['A_interv']])) %>% #this works regardless of whether A is monotonic.
     dplyr::pull(incl)
 

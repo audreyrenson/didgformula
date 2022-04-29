@@ -15,7 +15,9 @@ recursive_ice_long(
   inside_family,
   t_col,
   binomial_n = NULL,
-  models = TRUE
+  models = TRUE,
+  tmle = FALSE,
+  weights = NULL
 )
 }
 \arguments{
