@@ -4,14 +4,12 @@
 # didgformula
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The R package `didgformula` implements inverse-probability weighted,
-iterated conditional, and outcome regression estimators for the
-difference-in-differences g-formula.
-
-The difference-in-differences (DID) g-formula extends conventional DID methods, which target average treatment effects in the treated (ATTs), to more general causal effects defined as average counterfactual outcomes under a (possibly time-varying) exposure regime. DID g-formula also extends conventional g-formula methods, which base identification on an assumption called *exchangeability*, which requires that we've measured a sufficient set of covariates to adjust for confounding. Instead, DID g-formula relies on an assumption called *parallel trends*, standard in DID approaches, which requires that under the specified treatment regime, conditional on covariates, counterfactual outcome *trends* would have been parallel (on an appropriate scale) regardless of actual treatment received. 
+iterated conditional g-computation, and doubly robust targeted maximum
+likelihood estimators for sustained intervention effects under parallel
+trends assumptions.
 
 ## Installation
 
@@ -40,20 +38,27 @@ parameters   = generate_parameters(Tt=time_periods)
 df           = generate_data(N=N_obs, Tt=time_periods, Beta=parameters, ylink = 'rnorm_identity')
 
 head(df)
-#>   uid U0 L0 A0 L1 A1 L2 A2 L3 A3 L4 A4 L5 A5        Y0         Y1        Y2
-#> 1   1  0  0  0  0  0  0  0  0  0  1  0  0  0 -3.719838 -0.4517163 -1.284486
-#> 2   2  1  0  0  0  0  1  0  0  0  0  1  1  1 -3.864279 -1.2299652 -1.214372
-#> 3   3  1  1  0  1  0  0  0  1  0  0  0  0  0 -1.755012 -2.2640601 -1.644146
-#> 4   4  0  0  0  1  0  1  0  0  0  0  1  0  1 -4.721246 -3.6573464 -3.067212
-#> 5   5  0  1  0  0  1  0  1  0  1  1  1  0  1 -5.334336 -2.0876061 -2.514040
-#> 6   6  1  0  0  0  0  0  0  1  0  0  0  0  0 -4.848701 -0.9340174 -1.354781
-#>          Y3         Y4        Y5
-#> 1  0.675204 -1.5812527 -1.543083
-#> 2  1.049619 -3.6433462 -3.606828
-#> 3  1.047379 -0.3792723 -3.277435
-#> 4 -1.239129 -2.8298270 -1.840702
-#> 5  2.821422 -3.1627642 -2.315439
-#> 6 -1.014045 -3.8651784 -4.365492
+#>   uid U0 L0         W0 A0 L1         W1 A1 L2          W2 A2 L3         W3 A3
+#> 1   1  1  1 0.42889213  0  0 -2.7811919  0  0  0.18963549  0  0 -2.4548948  1
+#> 2   2  1  0 1.53171732  0  1  1.0080488  0  1  0.06726136  0  0  1.4825164  0
+#> 3   3  0  1 0.65063303  0  1 -0.3276539  1  0 -1.68579853  1  1  1.5884367  1
+#> 4   4  1  0 0.92350947  0  0 -1.3764935  0  0 -0.19326923  0  0 -1.0013806  1
+#> 5   5  1  1 1.40689657  0  0 -0.5103987  0  0  0.57436194  0  0 -1.0926517  0
+#> 6   6  1  0 0.07771018  0  1 -0.3072492  0  0 -0.35724493  0  0  0.4300903  0
+#>   L4         W4 A4 L5          W5 A5         Y0        Y1          Y2
+#> 1  0 -0.2439675  1  1  2.09577923  1 -2.1574128 -1.766963  0.11996427
+#> 2  0 -0.6986895  0  0 -0.08951730  0 -0.7277109 -3.525773 -1.24276996
+#> 3  0 -0.7389423  1  0  0.03679411  1 -2.9713932 -4.313408 -0.04549021
+#> 4  0  1.0629917  1  0 -0.85402635  1 -1.8168327 -3.201612 -0.58378946
+#> 5  0 -0.3215103  0  0 -2.07722722  0 -1.0881852 -3.542649  0.45214506
+#> 6  1 -0.7852357  0  0 -0.07780930  0 -1.5003276 -2.923101 -1.09694604
+#>           Y3         Y4          Y5
+#> 1 -2.4577156 -0.4874623  3.61649314
+#> 2  0.4199241  0.2020285  1.22008428
+#> 3 -0.7302781  1.1281042  1.50973592
+#> 4 -0.0680779  0.8496794 -0.73340196
+#> 5 -1.9242997  0.1638116  0.04507994
+#> 6 -0.5373790 -0.5839260  3.11250228
 ```
 
 We can calculate the true parameters by generating a large number of
@@ -64,50 +69,35 @@ df_po = generate_data(N=N_obs*10, Tt=time_periods, Beta=parameters, ylink='rnorm
 
 truth = colMeans(calc_ydiffs(df_po, Tt=time_periods)) #calc_ydiffs simply takes Y_t-Y_{t-1} for t=1,...,T
 truth
-#> [1]  2.141214558 -0.023444726  2.386090954 -3.893338022  0.001502573
+#> [1] -1.84302146  2.95303511 -0.01427988  0.92387834  0.74953343
 ```
 
 We can estimate this using IPTW:
 
 ``` r
-estimates_iptw = iptw_pipeline(data = df, rhs_formula = '~L{t}', Tt=time_periods)
+estimates_iptw = iptw_pipeline(data = df, den_formula = '~L{t}', Tt=time_periods)
 estimates_iptw
 #> # A tibble: 5 x 2
 #>       t estimate
 #>   <int>    <dbl>
-#> 1     1  2.12   
-#> 2     2  0.00755
-#> 3     3  2.39   
-#> 4     4 -3.91   
-#> 5     5  0.0128
+#> 1     1  -1.91  
+#> 2     2   3.00  
+#> 3     3   0.0259
+#> 4     4   0.907 
+#> 5     5   0.681
 ```
 
 ICE:
 
 ``` r
-estimates_ice = ice_pipeline(data = df, inside_formula = '~L{t}', outside_formula = '~L{k}', Tt=time_periods)
+estimates_ice = ice_pipeline(data = df, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t-1}', outside_formula = '~L{k}', Tt=time_periods)
 estimates_ice
 #> # A tibble: 5 x 2
 #>       t estimate
 #>   <int>    <dbl>
-#> 1     1  2.12   
-#> 2     2  0.00940
-#> 3     3  2.39   
-#> 4     4 -3.91   
-#> 5     5  0.0188
-```
-
-Outcome regression:
-
-``` r
-estimates_or = or_pipeline(data = df, y_formula = '~L{t}', l_formula = '~1', Tt=time_periods, nreps=N_obs) #usually nreps should be much larger but in this example it appears fine
-estimates_or
-#> # A tibble: 5 x 2
-#>       t estimate
-#>   <int>    <dbl>
-#> 1     1  2.12   
-#> 2     2  0.00936
-#> 3     3  2.39   
-#> 4     4 -3.91   
-#> 5     5  0.0184
+#> 1     1  -1.91  
+#> 2     2   3.00  
+#> 3     3   0.0251
+#> 4     4   0.908 
+#> 5     5   0.680
 ```

@@ -117,7 +117,7 @@ result_table %>%
   kable() %>%
   kable_styling() %>%
   add_header_above(c(" " = 1, "n=1,000" = 3, "n=10,000" =3, "n=100,000" = 3)) %>%
-  footnote('a×1e −3; b×1e −4; c×1e −5; dKolmogorov-Smirnoff test for normality.
+  footnote('p=p-value from Kolmogorov-Smirnoff test for normality.
 Abbreviations: ice=iterated conditional expectation, iptw=inverse probability of treatment weighted, tmle=targeted
 maximum likelihood, qfal=outcome models misspecified, gfal=treatment models misspecified, bfal=both sets of models
 misspecified, true=all models correctly specified.

@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The R package `didgformula` implements inverse-probability weighted, iterated conditional, and outcome regression estimators for the difference-in-differences g-formula. 
+The R package `didgformula` implements inverse-probability weighted, iterated conditional g-computation, and doubly robust targeted maximum likelihood estimators for sustained intervention effects under parallel trends assumptions.
 
 ## Installation
 
@@ -60,20 +60,12 @@ truth
 We can estimate this using IPTW:
 
 ```{r}
-estimates_iptw = iptw_pipeline(data = df, rhs_formula = '~L{t}', Tt=time_periods)
+estimates_iptw = iptw_pipeline(data = df, den_formula = '~L{t}', Tt=time_periods)
 estimates_iptw
 ```
 ICE:
 ```{r}
-estimates_ice = ice_pipeline(data = df, inside_formula = '~L{t}', outside_formula = '~L{k}', Tt=time_periods)
+estimates_ice = ice_pipeline(data = df, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t-1}', outside_formula = '~L{k}', Tt=time_periods)
 estimates_ice
 ```
-
-Outcome regression:
-```{r}
-estimates_or = or_pipeline(data = df, y_formula = '~L{t}', l_formula = '~1', Tt=time_periods, nreps=N_obs) #usually nreps should be much larger but in this example it appears fine
-estimates_or
-```
-
-
 
