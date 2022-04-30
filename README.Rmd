@@ -31,9 +31,7 @@ devtools::install_github("audreyrenson/didgformula")
 
 ## Examples
 
-### Continuous outcomes
-
-First we simulate some data under the stated assumptions:
+Here is a basic example using simulated data:
 
 ```{r simulate-continuous}
 library(didgformula)
@@ -60,12 +58,12 @@ truth
 We can estimate this using IPTW:
 
 ```{r}
-estimates_iptw = iptw_pipeline(data = df, den_formula = '~L{t}', Tt=time_periods)
+estimates_iptw = iptw_pipeline(data = df, den_formula = '~W{t}', Tt=time_periods)
 estimates_iptw
 ```
 ICE:
 ```{r}
-estimates_ice = ice_pipeline(data = df, inside_formula_t = '~L{t}', inside_formula_tmin1='~L{t-1}', outside_formula = '~L{k}', Tt=time_periods)
+estimates_ice = ice_pipeline(data = df, inside_formula_t = '~W{t}', inside_formula_tmin1='~W{t-1}', outside_formula = '~W{k}', Tt=time_periods)
 estimates_ice
 ```
 
