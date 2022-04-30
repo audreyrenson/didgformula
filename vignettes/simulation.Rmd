@@ -16,12 +16,12 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(tidyverse)
-library(furrr)
+library(parallel)
 library(didgformula)
 library(kableExtra)
 library(glue)
 
-plan(multisession, workers = parallel::detectCores()/2)
+cores = detectCores()/2
 
 
 set.seed(5)
@@ -30,10 +30,7 @@ Tt=5
 Beta = generate_parameters(Tt, mu_Beta_A = c(.2,.2,.2,.2,-.4))
 truth = estimate_truth(df_po = generate_data(1e7, Tt, Beta, TRUE), Tt, type = 'levels')
 gc()
-```
 
-
-```{r}
 
 onesim = function(n) {
   df = generate_data(n, Tt, Beta) %>%
@@ -73,24 +70,6 @@ onesim = function(n) {
     select(estimator, estimate, bias)
 }
 
-
-
-
-sims1e3 = future_map(1:nsims, function(x) onesim(1e2), .options = furrr_options(seed=TRUE))
-gc()
-sims1e4 = future_map(1:nsims, function(x) onesim(1e3), .options = furrr_options(seed=TRUE))
-gc()
-sims1e5 = future_map(1:nsims, function(x) onesim(1e4),  .options = furrr_options(seed=TRUE))
-gc()
-
-
-#reshape
-result = list('1e3'=sims1e3,'1e4'=sims1e4, '1e5'=sims1e5) %>%
-  map(bind_rows, .id='rep') %>%
-  bind_rows(.id='n') #%>%
-  #write_csv(file = 'dr_results_linear.csv')
-
-
 fmt = function(x, dig =3, clip=TRUE, format='g') {
   out = formatC(x, digits=dig, format=format, flag='#')
   clipped_out = paste0(c('<0.', rep(0, dig-1), '1'), collapse = '')
@@ -99,6 +78,33 @@ fmt = function(x, dig =3, clip=TRUE, format='g') {
   }
   return (out)
 }
+
+```
+
+```{r sim1e3, warning=FALSE}
+sims1e3 = mclapply(1:nsims, function(x) onesim(1e2), mc.cores = cores, mc.set.seed = TRUE)
+gc()
+```
+
+```{r sim1e4, warning=FALSE}
+sims1e4 = mclapply(1:nsims, function(x) onesim(1e3), mc.cores = cores, mc.set.seed = TRUE)
+gc()
+```
+
+
+```{r sim1e5, warning=FALSE}
+sims1e5 = mclapply(1:nsims, function(x) onesim(1e4), mc.cores = cores, mc.set.seed = TRUE)
+gc()
+```
+
+
+```{r results_presentation}
+
+#reshape
+result = list('1e3'=sims1e3,'1e4'=sims1e4, '1e5'=sims1e5) %>%
+  map(bind_rows, .id='rep') %>%
+  bind_rows(.id='n') #%>%
+  #write_csv(file = 'dr_results_linear.csv')
 
 result_table = result %>%
   group_by(n, estimator) %>%
@@ -124,8 +130,5 @@ misspecified, true=all models correctly specified.
 8
 ')
 
-
-
-
-
 ```
+
