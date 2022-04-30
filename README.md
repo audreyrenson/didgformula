@@ -23,9 +23,7 @@ devtools::install_github("audreyrenson/didgformula")
 
 ## Examples
 
-### Continuous outcomes
-
-First we simulate some data under the stated assumptions:
+Here is a basic example using simulated data:
 
 ``` r
 library(didgformula)
