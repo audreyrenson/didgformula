@@ -1,0 +1,134 @@
+---
+title: "simulation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyverse)
+library(parallel)
+library(didgformula)
+library(kableExtra)
+library(glue)
+
+cores = detectCores()/2
+
+
+set.seed(5)
+nsims=5
+Tt=5
+Beta = generate_parameters(Tt, mu_Beta_A = c(.2,.2,.2,.2,-.4))
+truth = estimate_truth(df_po = generate_data(1e7, Tt, Beta, TRUE), Tt, type = 'levels')
+gc()
+
+
+onesim = function(n) {
+  df = generate_data(n, Tt, Beta) %>%
+    rename(W10=L0, W11=L1, W12=L2, W13=L3, W14=L4, W15=L5,
+           W20 = W0, W21=W1, W22=W2, W23=W3, W24=W4, W25=W5)
+
+
+  #num_mods = fit_treatment_models(df, rhs_formula = '~1', Tt=Tt, freq_w=1)
+  den_mods_true = fit_treatment_models(df, rhs_formula = '~W1{t}+W2{t}+I(W2{t}^2)', Tt=Tt, freq_w =1)
+  den_mods_false = fit_treatment_models(df, rhs_formula = '~W1{t}+W2{t}', Tt=Tt, freq_w =1)
+  weights_true = cbind(1, calc_weights(denominator = pred_treatment_models(df, den_mods_true),
+                                       numerator   = 1))
+  weights_false = cbind(1, calc_weights(denominator = pred_treatment_models(df, den_mods_false),
+                                        numerator   = 1))
+
+
+  results = list(
+    iptw_true = iptw_pipeline(df, Tt, '~W1{t}+W2{t}+I(W2{t}^2)', '~1',models = FALSE),
+    iptw_gfal = iptw_pipeline(df, Tt, '~W1{t}+W2{t}', '~1',models = FALSE),
+    ice_true = ice_pipeline(df, '~W1{t}+W2{t}+I(W2{t}^2)', '~W1{t-1}+W2{t-1}+I(W2{t-1}^2)','~W1{k}+W2{k}+I(W2{k}^2)',Tt,models = FALSE),
+    ice_qfal = ice_pipeline(df, '~W1{t}+W2{t}', '~W1{t-1}+W2{t-1}','~W1{k}+W2{k}',Tt,models = FALSE),
+    tmle_true = ice_pipeline(df, '~W1{t}+W2{t}+I(W2{t}^2)', '~W1{t-1}+W2{t-1}+I(W2{t-1}^2)','~W1{k}+W2{k}+I(W2{k}^2)',Tt,models = FALSE, tmle=TRUE, weights=weights_true),
+    tmle_gfal = ice_pipeline(df, '~W1{t}+W2{t}+I(W2{t}^2)', '~W1{t-1}+W2{t-1}+I(W2{t-1}^2)','~W1{k}+W2{k}+I(W2{k}^2)',Tt,models = FALSE, tmle=TRUE, weights=weights_false),
+    tmle_qfal = ice_pipeline(df, '~W1{t}+W2{t}          ',  '~W1{t-1}+W2{t-1}            ', '~W1{k}+W2{k}          ',Tt,models = FALSE, tmle=TRUE, weights=weights_true),
+    tmle_bfal = ice_pipeline(df, '~W1{t}+W2{t}          ',  '~W1{t-1}+W2{t-1}            ', '~W1{k}+W2{k}          ',Tt,models = FALSE, tmle=TRUE, weights=weights_false)
+  )
+
+
+  #return estimate and bias for mean outcome at time 5
+  y0 = mean(df$Y0)
+  results %>%
+    map(mutate, estimate = cumsum(estimate) + y0) %>%
+    bind_rows(.id='estimator') %>%
+    left_join(truth %>% rename(truth=estimate), by='t') %>%
+    mutate(bias = estimate - truth) %>%
+    filter(t==5) %>%
+    select(estimator, estimate, bias)
+}
+
+fmt = function(x, dig =3, clip=TRUE, format='g') {
+  out = formatC(x, digits=dig, format=format, flag='#')
+  clipped_out = paste0(c('<0.', rep(0, dig-1), '1'), collapse = '')
+  if(clip) {
+    out = ifelse(x < 10^(-dig), clipped_out, out)
+  }
+  return (out)
+}
+
+```
+
+```{r sim1e3, warning=FALSE}
+sims1e3 = mclapply(1:nsims, function(x) onesim(1e2), mc.cores = cores, mc.set.seed = TRUE)
+gc()
+```
+
+```{r sim1e4, warning=FALSE}
+sims1e4 = mclapply(1:nsims, function(x) onesim(1e3), mc.cores = cores, mc.set.seed = TRUE)
+gc()
+```
+
+
+```{r sim1e5, warning=FALSE}
+sims1e5 = mclapply(1:nsims, function(x) onesim(1e4), mc.cores = cores, mc.set.seed = TRUE)
+gc()
+```
+
+
+```{r results_presentation}
+
+#reshape
+result = list('1e3'=sims1e3,'1e4'=sims1e4, '1e5'=sims1e5) %>%
+  map(bind_rows, .id='rep') %>%
+  bind_rows(.id='n') #%>%
+  #write_csv(file = 'dr_results_linear.csv')
+
+result_table = result %>%
+  group_by(n, estimator) %>%
+  summarise(variance = var(estimate), bias =mean(bias),
+            p = ks.test((estimate - mean(estimate))/sd(estimate), y='pnorm')$p.value) %>%
+  mutate(p = fmt(p, dig=2),
+         variance = fmt(variance, dig=2, clip=FALSE),
+         bias = fmt(bias, dig=4, clip=FALSE, format='f')) %>%
+  ungroup() %>%
+  split(.$n) %>%
+  {cbind(estimator = .[[1]]$estimator,  Reduce(cbind, map(., select, -n:-estimator))) }
+
+
+result_table %>%
+  as.matrix() %>%
+  kable() %>%
+  kable_styling() %>%
+  add_header_above(c(" " = 1, "n=1,000" = 3, "n=10,000" =3, "n=100,000" = 3)) %>%
+  footnote('p=p-value from Kolmogorov-Smirnoff test for normality.
+Abbreviations: ice=iterated conditional expectation, iptw=inverse probability of treatment weighted, tmle=targeted
+maximum likelihood, qfal=outcome models misspecified, gfal=treatment models misspecified, bfal=both sets of models
+misspecified, true=all models correctly specified.
+8
+')
+
+```
+
