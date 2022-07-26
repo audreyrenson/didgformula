@@ -12,6 +12,7 @@ A data frame with 516 rows and 6 variables:
 \item{case_gr}{Number of new COVID-19 cases reported per 100k population in the state in the previous week}
 \item{stayathome}{Binary indicator of whether the state was under stay-at-home/shelter-in-place order at any time during the week (1=yes, 0=no)}
 \item{pop}{State population counts}
+\item{mort}{State-level all-cause mortality counts during the current week}
 }
 }
 \source{

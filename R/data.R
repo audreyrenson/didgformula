@@ -12,6 +12,7 @@
 #'   \item{case_gr}{Number of new COVID-19 cases reported per 100k population in the state in the previous week}
 #'   \item{stayathome}{Binary indicator of whether the state was under stay-at-home/shelter-in-place order at any time during the week (1=yes, 0=no)}
 #'   \item{pop}{State population counts}
+#'   \item{mort}{State-level all-cause mortality counts during the current week}
 #' }
 #' @source COVID-19 case counts come from \url{https://github.com/CSSEGISandData/COVID-19}, policy status
 #' from \url{https://hrs.isr.umich.edu/data-products/restricted-data/available-products/10799}, mortality counts from
