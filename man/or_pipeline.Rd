@@ -39,9 +39,6 @@ or_pipeline(
 
 \item{tibble}{logical. Return results as tibble (TRUE) or vector (FALSE)?}
 }
-\value{
-
-}
 \description{
 Outcome regression DID g-formula estimator
 }

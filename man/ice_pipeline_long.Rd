@@ -45,9 +45,6 @@ ice_pipeline_long(
 
 \item{data}{Wide format data frame with one row per individual, and columns Yt for t = 0,1,...,Tt.}
 }
-\value{
-
-}
 \description{
 Iterated conditional DID g-formula estimator
 }

@@ -41,14 +41,13 @@ recursive_ice_long(
 
 \item{models}{lgl. Return all models as an attribute?}
 }
-\value{
-
-}
 \description{
 Recursively apply the ICE algorithm for a long dataset
 }
 \details{
-Formulas in \code{recursive_ice_long()} are glue-style and admit 2 special references.\preformatted{    \{n\} is shorthand for `n_nested`. For example, we typically want exposure and covariate values
+Formulas in \code{recursive_ice_long()} are glue-style and admit 2 special references.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{    \{n\} is shorthand for `n_nested`. For example, we typically want exposure and covariate values
     lagged exactly `n_nested` periods in each outside model, so we might pass `'~A_lag\{n\}*L_lag\{n\}'`
     as `outside_formula`. This is simply a more concise version of `'~A_lag\{n_nested\}*L_lag\{n_nested\}`.
 
@@ -57,5 +56,5 @@ Formulas in \code{recursive_ice_long()} are glue-style and admit 2 special refer
     attribute of `df_obs`, takes the indices `n_nested:length(tvars)`, and pastes these together with `collapse='+'`.
     This is useful for including time indicators in saturated models, since the `n`th outside model will only have
     observations with `t>=n` in it.
-}
+}\if{html}{\out{</div>}}
 }

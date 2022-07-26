@@ -36,9 +36,6 @@ generate_parameters(
 
 \item{ylink}{}
 }
-\value{
-
-}
 \description{
 Pick parameter values for simulation, from a normal distribution
 }

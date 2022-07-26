@@ -11,9 +11,6 @@ calc_weights(denominator, numerator = 1)
 
 \item{numerator}{Matrix of predictions, as returned by \code{pred_treatment_models()}}
 }
-\value{
-
-}
 \description{
 Calculate inverse probability of treatment weights
 }

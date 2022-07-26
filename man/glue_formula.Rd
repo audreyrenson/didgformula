@@ -11,9 +11,6 @@ glue_formula(string, ...)
 
 \item{...}{additional arguments. Here you can pass variables to be evaluated in enclosed expressions in \code{string}.}
 }
-\value{
-
-}
 \description{
 This function is specifically designed for dynamically evaluating formulas with time indices. As such, it will delete any formula elements referring to times less than 0.
 }

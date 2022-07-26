@@ -15,9 +15,6 @@ pt_deviation_histograms(df_po, Tt, k = NULL, link_fun = NULL)
 
 \item{link}{function. Corresponds to the scale of parallel trends. Typically either I (identity-scale) or qlogis (logit-scale)}
 }
-\value{
-
-}
 \description{
 View histograms of deviations from parallel trends in simulated data
 }

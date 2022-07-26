@@ -19,9 +19,6 @@ fit_outer_exp_model(k, data, preds, rhs_formula, binomial_n = NULL)
 
 \item{rhs_formula_tmin}{chr. RHS glue-style formula for Yt-1 model}
 }
-\value{
-
-}
 \description{
 Fit outer moderls for ICE using \code{lm}
 }

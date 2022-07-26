@@ -13,9 +13,6 @@ results_histograms(results_df, estimates_truth, show_bias = TRUE)
 
 \item{show_bias}{Logical. Should the histograms show deviations from 'truth' (TRUE) or the estimates themselves (FALSE)?}
 }
-\value{
-
-}
 \description{
 Red vertical lines represent the true expected value for the random variable of which the displayed quantities should be realizations. If show_bias=TRUE, this is 0, otherwise it is E(Y_t(a)-Y_t-1(a)).
 Blue vertical lines represent the estimated expected value based on the realizations.

@@ -44,9 +44,6 @@ ice_pipeline(
 
 \item{weights}{Matrix of IPTW weights as returned by \code{cbind(1, calc_weights(...))}. Default \code{NULL}, required if \code{tmle=TRUE}.}
 }
-\value{
-
-}
 \description{
 Iterated conditional DID g-formula estimator
 }

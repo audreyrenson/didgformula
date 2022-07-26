@@ -26,9 +26,6 @@ fit_two_outcome_models(
 
 \item{rhs_formula_tmin}{chr. RHS glue-style formula for Yt-1 model}
 }
-\value{
-
-}
 \description{
 Fit outcome models using \code{glm} at t and t-1 for ICE and outcome regression pipelines
 }

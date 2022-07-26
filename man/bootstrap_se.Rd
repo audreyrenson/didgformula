@@ -17,9 +17,6 @@ bootstrap_se(data, nboots, estimator, ..., tibble = TRUE)
 
 \item{tibble}{logical. Return results as a tibble (TRUE) or vector (FALSE)?}
 }
-\value{
-
-}
 \description{
 Bootstrap standard error estimates for didgformula estimators
 }
