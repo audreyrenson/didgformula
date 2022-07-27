@@ -31,9 +31,11 @@ Imports:
     dplyr,
     tidyr,
     ggplot2,
+    forcats,
     magrittr,
     purrr,
     stringr,
+    rlang,
     SuppDists
 VignetteBuilder: knitr
 Depends: 

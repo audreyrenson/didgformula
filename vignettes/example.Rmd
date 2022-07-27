@@ -16,11 +16,14 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(didgformula)
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+library(forcats)
 library(splines)
 library(glue)
 theme_set(theme_minimal())
-
 ```
 
 ## Introduction
