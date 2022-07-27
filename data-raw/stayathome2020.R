@@ -6,7 +6,6 @@
 library(tidyverse)
 library(lubridate)
 library(splines)
-library(rsample)
 library(didgformula)
 theme_set(theme_minimal())
 
@@ -18,9 +17,6 @@ lockdown_dates_raw <- read_csv(glue::glue("{path}COVID-19 US state policy databa
 
 #from https://data.cdc.gov/NCHS/Weekly-Provisional-Counts-of-Deaths-by-State-and-S/muzy-jte6
 mortality_weekly_raw <- read_csv(glue::glue("{path}Weekly_Provisional_Counts_of_Deaths_by_State_and_Select_Causes__2020-2021.csv"))
-
-#from https://statepolicies.com/data/graphs/face-masks/
-mask_mandates_raw <- read_csv(glue::glue("{path}COVID-19 US state policy database (CUSP) - Face Masks.csv"))
 
 #case data
 cases_daily <- read_csv(glue::glue("{path}time_series_covid19_confirmed_US.csv"))
