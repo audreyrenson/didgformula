@@ -51,18 +51,13 @@ sah = stayathome2020
 #the analysis is simpler if the exposure variable is 0 under the intervention in question
 sah$open = 1-sah$stayathome
 
-#Week 3 was the first time a stay-at-home ordder was lifted, so sah$open = 0 for everyone before that. 
-#Thus, we code a variable that is the interaction of week*open that drops terms were sah$open is constant.
-sah$week_by_open = ifelse(sah$week - 2 < 0, 0, sah$week - 2) * sah$open  
-
 #coding the outcome as an Nx2 matrix for binomial likelihoods
 sah$mort_bin = cbind(sah$mort, sah$pop - sah$mort)
 
 #coding lags
-sah$open_lag = sah %>% group_by(state) %>% mutate(x=dplyr::lag(open)) %>% pull()
 sah$mort_lag = sah %>% group_by(state) %>% mutate(x=dplyr::lag(mort)) %>% pull()
 sah$mort_bin_lag = cbind(sah$mort_lag, sah$pop - sah$mort_lag)
-sah = sah %>% group_by(state) %>% append_lags(n_lags = 11, lag_vars = c('week_by_open', 'case_gr_1wk', 'case_gr_4wk'), default = NA) %>% ungroup()
+sah = sah %>% group_by(state) %>% append_lags(n_lags = 11, lag_vars = c('open', 'case_gr_4wk'), default = NA) %>% ungroup()
 
 #most modeling uses a dataset starting with week=1, so create a separate dataset to simplify
 sah_mod = sah[sah$week >0, ]
@@ -94,7 +89,7 @@ intervene = function(df_obs) {
 pos <- function(x) ifelse(x<0, 0, x)
 
 # append IPTW weights to the dataset for use in TMLE
-sah_mod$w0 = 1/( 1 - predict(glm(open ~ ns(week, df=3) + log(case_gr_1wk), data= sah_mod[sah_mod$open_lag==0, ], family=binomial), newdata=sah_mod, type='response'))
+sah_mod$w0 = 1/( 1 - predict(glm(open ~ ns(week, df=3) + log(case_gr_4wk), data= sah_mod[sah_mod$open_lag1==0, ], family=binomial), newdata=sah_mod, type='response'))
 sah_mod$w0 = sah_mod %>% group_by(state) %>% mutate(w0 = cumprod(w0)) %>% pull(w0)
 for(n in 1:11) {
   sah_mod[[glue('w{n}')]] = sah_mod %>% group_by(state) %>% mutate(w = lag(.data[[glue('w{n-1}')]])) %>% pull(w)
@@ -110,20 +105,20 @@ sah_mod <- sah_mod %>%
 
 ice_estimate = ice_pipeline_long(df_obs = sah_mod,
                                  df_interv = intervene(sah_mod),
-                                 inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr_1wk) + week_by_open ',
-                                 inside_formula_tmin1 = 'mort_bin_lag ~ ns(week, df=3) + lag(case_gr_1wk) + week_by_open ',
-                                 outside_formula = 'preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_1wk_lag{n}) + week_by_open_lag{n}',
+                                 inside_formula_t = 'mort_bin ~ factor(open)/ns(week, df=3) + log(case_gr_4wk)',
+                                 inside_formula_tmin1 = 'mort_bin_lag ~ factor(open)/ns(week, df=3) + lag(case_gr_4wk) ',
+                                 outside_formula = 'preds ~  factor(open_lag{n})/ns(week, df={min(3, pos(Tt-n-5)+1)}) + log(case_gr_4wk_lag{n})',
                                  Tt = 11,
                                  t_col = sah_mod$week,
                                  n_nested = 7,
                                  inside_family = binomial,
                                  pt_link_fun = NULL,
-                                 binomial_n = sah_mod$pop)
+                                 binomial_n = sah_mod$pop, models = TRUE)
 
 iptw_estimate = iptw_pipeline_long(df_obs = sah_mod,
                                    df_interv = intervene(sah_mod),
-                                   den_formula = 'open ~ ns(week, df=3) + log(case_gr_1wk)*open_lag',
-                                   num_formula = 'open ~ ns(week, df=3) + open_lag',
+                                   den_formula = 'open ~ ns(week, df=3) + log(case_gr_4wk)*open_lag1',
+                                   num_formula = 'open ~ ns(week, df=3) + open_lag1',
                                    family = binomial,
                                    yvar = 'mort',
                                    ylagvar = 'mort_lag',
@@ -134,9 +129,9 @@ iptw_estimate = iptw_pipeline_long(df_obs = sah_mod,
 
 tmle_estimate = ice_pipeline_long(df_obs = sah_mod,
                                  df_interv = intervene(sah_mod),
-                                 inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr_1wk)+ week_by_open ',
-                                 inside_formula_tmin1 = 'mort_bin_lag ~ ns(week, df=3) + lag(case_gr_1wk) + week_by_open ',
-                                 outside_formula = 'preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_1wk_lag{n})+ week_by_open_lag{n}',
+                                 inside_formula_t = 'mort_bin ~ factor(open)/ns(week, df=3) + log(case_gr_4wk)',
+                                 inside_formula_tmin1 = 'mort_bin_lag ~ factor(open)/ns(week, df=3) + lag(case_gr_4wk)',
+                                 outside_formula = 'preds ~  factor(open_lag{n})/ns(week, df={min(3, pos(Tt-n-5)+1)}) + log(case_gr_4wk_lag{n})',
                                  Tt = 11,
                                  t_col = sah_mod$week,
                                  n_nested = 7,
@@ -244,7 +239,7 @@ boot_template = sah %>%
   arrange(state, week)
 
 boot_append_weights = function(df) {
-  df$w0 = 1/( 1 - predict(glm(open ~ ns(week, df=3) + log(case_gr_1wk), data= df[df$open_lag==0, ], family=binomial), newdata=df, type='response'))
+  df$w0 = 1/( 1 - predict(glm(open ~ ns(week, df=3) + log(case_gr_4wk), data= df[df$open_lag1==0, ], family=binomial), newdata=df, type='response'))
   df$w0 = df %>% group_by(state) %>% mutate(w0 = cumprod(w0)) %>% pull(w0)
   for(n in 1:11) {
     df[[glue('w{n}')]] = df %>% group_by(state) %>% mutate(w = lag(.data[[glue('w{n-1}')]])) %>% pull(w)
@@ -265,8 +260,8 @@ boot_agg = tibble(rep = 1:R) %>%
          mod_data = map(data, filter, week>0) %>% map(boot_append_weights),
          iptw = map(mod_data, ~iptw_pipeline_long(df_obs = .,
                                                   df_interv = intervene(.),
-                                                  den_formula = 'open ~ ns(week, df=3) + log(case_gr_1wk)*open_lag',
-                                                  num_formula = 'open ~ ns(week, df=3) + open_lag',
+                                                  den_formula = 'open ~ ns(week, df=3) + log(case_gr_4wk)*open_lag1',
+                                                  num_formula = 'open ~ ns(week, df=3) + open_lag1',
                                                   family = binomial,
                                                   yvar = 'mort',
                                                   ylagvar = 'mort_lag',
@@ -276,9 +271,9 @@ boot_agg = tibble(rep = 1:R) %>%
                                                   binomial_n = .$pop)),
          ice = map(mod_data, ~ice_pipeline_long(df_obs = .,
                                                 df_interv = intervene(.),
-                                                inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr_1wk) + week_by_open ',
-                                                inside_formula_tmin1 = 'mort_bin_lag ~ ns(week, df=3) + lag(case_gr_1wk) + log(case_gr_4wk) + week_by_open ',
-                                                outside_formula = 'preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_1wk_lag{n}) + week_by_open_lag{n}',
+                                                inside_formula_t = 'mort_bin ~ factor(open)/ns(week, df=3) + log(case_gr_4wk)',
+                                                inside_formula_tmin1 = 'mort_bin_lag ~ factor(open)/ns(week, df=3) + lag(case_gr_4wk)',
+                                                outside_formula = 'preds ~  factor(open_lag{n})/ns(week, df={min(3, pos(Tt-n-5)+1)})  + log(case_gr_4wk_lag{n})',
                                                 Tt = 11,
                                                 t_col = .$week,
                                                 n_nested = 7,
@@ -287,9 +282,9 @@ boot_agg = tibble(rep = 1:R) %>%
                                                 binomial_n = .$pop)),
          tmle = map(mod_data, ~ice_pipeline_long(df_obs = .,
                                                 df_interv = intervene(.),
-                                                inside_formula_t = 'mort_bin ~ ns(week, df=3) + log(case_gr_1wk) + week_by_open ',
-                                                inside_formula_tmin1 = 'mort_bin_lag ~ ns(week, df=3) + lag(case_gr_1wk) + week_by_open ',
-                                                outside_formula = 'preds ~  ns(week, df={pos(Tt-n-5)+1}) + log(case_gr_1wk_lag{n}) + week_by_open_lag{n}',
+                                                inside_formula_t = 'mort_bin ~ factor(open)/ns(week, df=3) + log(case_gr_4wk)',
+                                                inside_formula_tmin1 = 'mort_bin_lag ~ factor(open)/ns(week, df=3) + lag(case_gr_4wk)',
+                                                outside_formula = 'preds ~  factor(open_lag{n})/ns(week, df={min(3, pos(Tt-n-5)+1)}) + log(case_gr_4wk_lag{n})',
                                                 Tt = 11,
                                                 t_col = .$week,
                                                 n_nested = 7,
@@ -329,7 +324,7 @@ lives_estimates_se = tibble(method = c('iptw','ice','tmle'),
 lives_estimates_se
 ```
 
-Clearly the IPTW estimator is far less precise than the other two estimators in this example. We can visualize the estimated rates as follows:
+Clearly the IPTW estimator is less precise than the other two estimators in this example. We can visualize the estimated rates as follows:
 
 ```{r fig.width=6, fig.height=4}
 df_figure = list(ice=ice_estimate,
@@ -353,7 +348,7 @@ df_figure %>%
   geom_line() +
   geom_ribbon(alpha=0.2) +
   theme(legend.position = c(1,1), legend.justification = c(1,1)) +
-  labs(x='Weeks since April 4, 2020', y='U.S. all-cause mortality rate per 100k (95% CI)')
+  labs(x='Weeks since April 6, 2020', y='U.S. all-cause mortality rate per 100k (95% CI)')
 
 
 ```
