@@ -117,7 +117,7 @@ result = list('1e3'=sims1e3,'1e4'=sims1e4, '1e5'=sims1e5) %>%
 result_table = result %>%
   group_by(n, estimator) %>%
   summarise(variance = var(estimate), bias =mean(bias),
-            p = ks.test((estimate - mean(estimate))/sd(estimate), y='pnorm')$p.value) %>%
+            p = nortest::lillie.test(estimate)$p.value) %>%
   mutate(p = fmt(p, dig=2),
          variance = fmt(variance, dig=2, clip=FALSE),
          bias = fmt(bias, dig=4, clip=FALSE, format='f')) %>%
@@ -164,98 +164,98 @@ misspecified, true=all models correctly specified.
   <tr>
    <td style="text-align:left;"> ice_qfal </td>
    <td style="text-align:left;"> 0.0043 </td>
-   <td style="text-align:left;"> 0.0150 </td>
-   <td style="text-align:left;"> 0.93 </td>
+   <td style="text-align:left;"> 0.0115 </td>
+   <td style="text-align:left;"> 0.68 </td>
    <td style="text-align:left;"> 0.00046 </td>
    <td style="text-align:left;"> 0.0110 </td>
-   <td style="text-align:left;"> 0.97 </td>
-   <td style="text-align:left;"> 0.000045 </td>
-   <td style="text-align:left;"> 0.0160 </td>
-   <td style="text-align:left;"> 0.96 </td>
+   <td style="text-align:left;"> 0.81 </td>
+   <td style="text-align:left;"> 4.5e-05 </td>
+   <td style="text-align:left;"> 0.0116 </td>
+   <td style="text-align:left;"> 0.76 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> ice_true </td>
    <td style="text-align:left;"> 0.0042 </td>
    <td style="text-align:left;"> -0.0004 </td>
-   <td style="text-align:left;"> 0.97 </td>
+   <td style="text-align:left;"> 0.82 </td>
    <td style="text-align:left;"> 0.00045 </td>
    <td style="text-align:left;"> -0.0002 </td>
-   <td style="text-align:left;"> 0.67 </td>
-   <td style="text-align:left;"> 0.000042 </td>
-   <td style="text-align:left;"> 0.0002</td>
-   <td style="text-align:left;"> 0.83 </td>
+   <td style="text-align:left;"> 0.23 </td>
+   <td style="text-align:left;"> 4.2e-05 </td>
+   <td style="text-align:left;"> 0.0002 </td>
+   <td style="text-align:left;"> 0.45 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> iptw_gfal </td>
    <td style="text-align:left;"> 0.0045 </td>
    <td style="text-align:left;"> 0.0117 </td>
-   <td style="text-align:left;"> 0.98 </td>
+   <td style="text-align:left;"> 0.86 </td>
    <td style="text-align:left;"> 0.00047 </td>
    <td style="text-align:left;"> 0.0117 </td>
-   <td style="text-align:left;"> 0.85 </td>
-   <td style="text-align:left;"> 0.000046 </td>
+   <td style="text-align:left;"> 0.49 </td>
+   <td style="text-align:left;"> 4.6e-05 </td>
    <td style="text-align:left;"> 0.0125 </td>
-   <td style="text-align:left;"> 0.94 </td>
+   <td style="text-align:left;"> 0.69 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> iptw_true </td>
    <td style="text-align:left;"> 0.0060 </td>
    <td style="text-align:left;"> -0.0017 </td>
-   <td style="text-align:left;"> 0.78 </td>
+   <td style="text-align:left;"> 0.37 </td>
    <td style="text-align:left;"> 0.00063 </td>
    <td style="text-align:left;"> -0.0008 </td>
-   <td style="text-align:left;"> 0.98 </td>
-   <td style="text-align:left;"> 0.000074 </td>
+   <td style="text-align:left;"> 0.87 </td>
+   <td style="text-align:left;"> 7.4e-05 </td>
    <td style="text-align:left;"> -0.0001 </td>
-   <td style="text-align:left;"> 0.89 </td>
+   <td style="text-align:left;"> 0.57 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> tmle_bfal </td>
    <td style="text-align:left;"> 0.0044 </td>
    <td style="text-align:left;"> 0.0119 </td>
-   <td style="text-align:left;"> 0.86 </td>
+   <td style="text-align:left;"> 0.51 </td>
    <td style="text-align:left;"> 0.00046 </td>
    <td style="text-align:left;"> 0.0115 </td>
-   <td style="text-align:left;"> 0.92 </td>
-   <td style="text-align:left;"> 0.000045 </td>
+   <td style="text-align:left;"> 0.65 </td>
+   <td style="text-align:left;"> 4.5e-05 </td>
    <td style="text-align:left;"> 0.0122 </td>
-   <td style="text-align:left;"> 0.91 </td>
+   <td style="text-align:left;"> 0.62 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> tmle_gfal </td>
    <td style="text-align:left;"> 0.0042 </td>
    <td style="text-align:left;"> -0.0008 </td>
-   <td style="text-align:left;"> 0.98 </td>
+   <td style="text-align:left;"> 0.86 </td>
    <td style="text-align:left;"> 0.00045 </td>
    <td style="text-align:left;"> -0.0004 </td>
-   <td style="text-align:left;"> 0.72 </td>
-   <td style="text-align:left;"> 0.000043 </td>
+   <td style="text-align:left;"> 0.28 </td>
+   <td style="text-align:left;"> 4.3e-05 </td>
    <td style="text-align:left;"> 0.0002 </td>
-   <td style="text-align:left;"> 0.65 </td>
+   <td style="text-align:left;"> 0.21 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> tmle_qfal </td>
    <td style="text-align:left;"> 0.0059 </td>
    <td style="text-align:left;"> -0.0009 </td>
-   <td style="text-align:left;"> 0.57 </td>
+   <td style="text-align:left;"> 0.15 </td>
    <td style="text-align:left;"> 0.00064 </td>
    <td style="text-align:left;"> -0.0007 </td>
-   <td style="text-align:left;"> 0.96 </td>
-   <td style="text-align:left;"> 0.000076 </td>
+   <td style="text-align:left;"> 0.78 </td>
+   <td style="text-align:left;"> 7.6e-05 </td>
    <td style="text-align:left;"> -0.0002 </td>
-   <td style="text-align:left;"> 0.81 </td>
+   <td style="text-align:left;"> 0.41 </td>
   </tr>
   <tr>
    <td style="text-align:left;"> tmle_true </td>
    <td style="text-align:left;"> 0.0054 </td>
    <td style="text-align:left;"> -0.0003 </td>
-   <td style="text-align:left;"> 0.97 </td>
+   <td style="text-align:left;"> 0.82 </td>
    <td style="text-align:left;"> 0.00056 </td>
    <td style="text-align:left;"> 0.0001 </td>
-   <td style="text-align:left;"> 0.52 </td>
-   <td style="text-align:left;"> 0.000057 </td>
+   <td style="text-align:left;"> 0.11 </td>
+   <td style="text-align:left;"> 5.7e-05 </td>
    <td style="text-align:left;"> 0.0001 </td>
-   <td style="text-align:left;"> 0.93 </td>
+   <td style="text-align:left;"> 0.69 </td>
   </tr>
 </tbody>
 <tfoot>
